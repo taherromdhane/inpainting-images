@@ -130,3 +130,6 @@ dmypy.json
 
 # jupyter checkpoints folder
 .ipynb_checkpoints
+
+# assets
+./assets
