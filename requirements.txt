@@ -1,10 +1,10 @@
 Brotli==1.0.9
 brotlipy==0.7.0
 certifi==2020.6.20
-cffi @ file:///C:/ci/cffi_1600699246375/work
+cffi==1.14.3
 click==7.1.2
 cycler==0.10.0
-dash @ file:///tmp/build/80754af9/dash_1602169941850/work
+dash==1.16.3
 dash-canvas==0.1.0
 dash-core-components==1.12.1
 dash-html-components==1.1.1
@@ -27,8 +27,8 @@ mkl-service==2.3.0
 networkx==2.5
 numpy==1.19.2
 Pillow==7.2.0
-plotly @ file:///tmp/build/80754af9/plotly_1601587622649/work
-pycparser @ file:///tmp/build/80754af9/pycparser_1594388511720/work
+plotly==4.11.0
+pycparser==2.20
 pyparsing==2.4.7
 python-dateutil==2.8.1
 PyWavelets==1.1.1
