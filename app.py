@@ -10,13 +10,13 @@ import base64
 import os
 import sys
 import matplotlib.pyplot as plt
-
+import cv2
 from utils import getMask
 from inpaint import inpaint
 
 app = dash.Dash(__name__)
 
-filename = 'Capture.PNG'
+filename = 'simp.png'
 canvas_width = 600
 width = canvas_width
 
@@ -47,15 +47,23 @@ def update_image(string):
     height = int(data['objects'][1]["height"] * image_width / canvas_width)
 
     mask = getMask(image_width, image_height, left, top, width, height)
-
+    # mask_filename='mask1.jpg'
+    # mask=Image.open(os.getcwd() + app.get_asset_url(mask_filename))
+    # print(mask)
     plt.imsave(os.getcwd() + app.get_asset_url("mask.jpg"), mask)
 
-    image_filename = 'Capture.PNG'
+    image_filename = 'simp.png'
     image = Image.open(os.getcwd() + app.get_asset_url(image_filename))
+
+    # mask = cv2.imread(os.getcwd() + app.get_asset_url('mask2.jpg'),2)
+    # ret, mask = cv2.threshold(mask,127,255,cv2.THRESH_BINARY)
+    # print(mask)
+    #plt.imsave(os.getcwd() + app.get_asset_url("mask2.jpg"), mask)
+
 
     inpainted = inpaint(image, mask, local_radius=50)
 
-    inpainted_filename = "inpaintedf.PNG"
+    inpainted_filename = "tuto.PNG"
 
     # inpainted_array = Image.fromarray(inpainted)
     # Image.save(inpainted, "/assets/inpainted.jpeg"
