@@ -5,6 +5,7 @@ import dash_html_components as html
 from dash_canvas import DashCanvas
 import json
 from dash_table import DataTable
+from dash_canvas.utils import parse_jsonstring
 from PIL import Image
 import base64
 import os
@@ -41,15 +42,19 @@ def update_image(string):
     image_width = int(data['objects'][0]["width"])
     image_height = int(data['objects'][0]["height"])
 
-    left = int(data['objects'][1]["left"] * image_width / canvas_width)
-    top = int(data['objects'][1]["top"] * image_width / canvas_width)
-    width = int(data['objects'][1]["width"] * image_width / canvas_width)
-    height = int(data['objects'][1]["height"] * image_width / canvas_width)
+    # left = int(data['objects'][1]["left"] * image_width / canvas_width)
+    # top = int(data['objects'][1]["top"] * image_width / canvas_width)
+    # width = int(data['objects'][1]["width"] * image_width / canvas_width)
+    # height = int(data['objects'][1]["height"] * image_width / canvas_width)
 
-    mask = getMask(image_width, image_height, left, top, width, height)
+    # mask = getMask(image_width, image_height, left, top, width, height)
     # mask_filename='mask1.jpg'
     # mask=Image.open(os.getcwd() + app.get_asset_url(mask_filename))
     # print(mask)
+
+    mask = 1 - parse_jsonstring(string, (image_width, image_height))
+    print(mask.shape)
+    
     plt.imsave(os.getcwd() + app.get_asset_url("mask.jpg"), mask)
 
     image_filename = 'simp.png'
