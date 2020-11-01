@@ -116,8 +116,8 @@ def getMaxPriority(border_pxls, confidence, image, mask, alpha, patch_size) :
             continue
         
         current_Cp = patchConfidence(pixel, confidence, mask, patch_size)
-        # current_Dp = patchData(pixel, image, mask, alpha, patch_size)
-        current_Dp = 1
+        current_Dp = patchData(pixel, image, mask, alpha, patch_size)
+        #current_Dp = 1
         
         current_Pp = current_Cp * current_Dp # Pp to change into matrix
         
