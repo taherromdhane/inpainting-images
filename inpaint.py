@@ -24,11 +24,18 @@ def isBorderPixel(n, m, mask) :
                 
     return False
 
-def getBorderPx(mask) :
+def getBorderPx(mask, patch_size) :
     border_pxls = set()
     
-    for i in range(mask.shape[0]) :
-        for j in range(mask.shape[1]) :
+    offset = patch_size//2 
+
+    upper_i = mask.shape[0] - offset - 1
+    lower_i = offset
+    upper_j = mask.shape[1] - offset - 1
+    lower_j = offset
+    
+    for i in range(lower_i, upper_i + 1) :
+        for j in range(lower_j, upper_j + 1) :
             if isBorderPixel(i, j, mask) :
                 border_pxls.add((i, j))
     
@@ -153,7 +160,7 @@ def getOptimalPatch(image, mask, target_patch, patch_size, local_radius = None) 
         lower_i = offset
         upper_j = image.shape[1] - offset - 1
         lower_j = offset
-#     print("i : {} - {}, j : {} - {}".format(lower_i, upper_i, lower_j, upper_j))
+    # print("i : {} - {}, j : {} - {}".format(lower_i, upper_i, lower_j, upper_j))
     
     optimal_patch = (0, 0)
     optimal_distance = 1e9
@@ -232,7 +239,7 @@ def inpaint(image, mask, patch_size=9, alpha=1, local_radius=500) :
     # change to identify border, then calculate priorities
     while True :
 
-        border_pxls = getBorderPx(mask)
+        border_pxls = getBorderPx(mask, patch_size)
         if len(border_pxls) == 0 :
             break
             
