@@ -11,13 +11,14 @@ import base64
 import os
 import sys
 import matplotlib.pyplot as plt
+import numpy as np
 import cv2
 from utils import getMask
 from inpaint import inpaint
 
 app = dash.Dash(__name__)
 
-filename = 'simp.png'
+filename = 'pavage.png'
 canvas_width = 600
 width = canvas_width
 
@@ -41,23 +42,28 @@ def update_image(string):
 
     image_width = int(data['objects'][0]["width"])
     image_height = int(data['objects'][0]["height"])
+    
+    mask_filename='mask1.jpg'
 
-    # left = int(data['objects'][1]["left"] * image_width / canvas_width)
-    # top = int(data['objects'][1]["top"] * image_width / canvas_width)
-    # width = int(data['objects'][1]["width"] * image_width / canvas_width)
-    # height = int(data['objects'][1]["height"] * image_width / canvas_width)
+    mask = np.zeros((image_height, image_width))
 
-    # mask = getMask(image_width, image_height, left, top, width, height)
-    # mask_filename='mask1.jpg'
-    # mask=Image.open(os.getcwd() + app.get_asset_url(mask_filename))
+    if data['objects'][1]["type"] == "rect" :
+            
+        left = int(data['objects'][1]["left"] * image_width / canvas_width)
+        top = int(data['objects'][1]["top"] * image_width / canvas_width)
+        width = int(data['objects'][1]["width"] * image_width / canvas_width)
+        height = int(data['objects'][1]["height"] * image_width / canvas_width)
+
+        mask = getMask(image_width, image_height, left, top, width, height)
+        # mask=Image.open(os.getcwd() + app.get_asset_url(mask_filename))
     # print(mask)
-
-    mask = 1 - parse_jsonstring(string, (image_width, image_height))
+    else :
+        mask =  1 - parse_jsonstring(string, (image_height, image_width))
     print(mask.shape)
     
-    plt.imsave(os.getcwd() + app.get_asset_url("mask.jpg"), mask)
+    plt.imsave(os.getcwd() + app.get_asset_url(mask_filename), mask)
 
-    image_filename = 'simp.png'
+    image_filename = 'pavage.png'
     image = Image.open(os.getcwd() + app.get_asset_url(image_filename))
 
     # mask = cv2.imread(os.getcwd() + app.get_asset_url('mask2.jpg'),2)
@@ -68,7 +74,7 @@ def update_image(string):
 
     inpainted = inpaint(image, mask, local_radius=50)
 
-    inpainted_filename = "tuto.PNG"
+    inpainted_filename = "image3new.PNG"
 
     # inpainted_array = Image.fromarray(inpainted)
     # Image.save(inpainted, "/assets/inpainted.jpeg"
