@@ -225,7 +225,7 @@ def fillPatch(image, mask, target_patch, opt_patch, patch_size) :
     
     return image, mask
 
-def inpaint(image, mask, patch_size=9, alpha=1, local_radius=500) :
+def inpaint(image, mask, patch_size, alpha=1, local_radius=500) :
     
     # assert patch_size is an odd number
     assert(patch_size%2 == 1)
