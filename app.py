@@ -6,6 +6,7 @@ from dash_canvas import DashCanvas
 import json
 from dash_table import DataTable
 from dash_canvas.utils import parse_jsonstring
+import dash_core_components as dcc
 from PIL import Image
 import base64
 import os
@@ -13,26 +14,89 @@ import sys
 import matplotlib.pyplot as plt
 import numpy as np
 import cv2
+import uuid 
 from utils import getMask
 from inpaint import inpaint
 
-app = dash.Dash(__name__)
+app = dash.Dash(__name__, serve_locally=False)
 
-filename = 'pavage.png'
-canvas_width = 600
+filename = 'test_images/pavage.png'
+canvas_width = 400
 width = canvas_width
 
 app.layout = html.Div([
-    html.H6('Draw on image and press Save to show annotations geometry'),
-    DashCanvas(id='annot-canvas',
-               lineWidth=5,
-               filename=app.get_asset_url(filename),
-               width=canvas_width,
-               ),
-    html.Img(id='image', width=canvas_width)])
+    html.Div([
+        html.H2('Draw on image and press Save to show annotations geometry'),
+        html.Div([
+            html.H6(children=['Brush width']),
+            dcc.Slider(
+                id='brush-width-slider',
+                min=2,
+                max=60,
+                step=1,
+                value=10
+            ),
+        ], className="three columns"),
+        html.Div([
+            html.H6(children=['Patch Size']),
+            dcc.Slider(
+                id='patch-size-slider',
+                min=3,
+                max=11,
+                step=2,
+                value=5,
+                marks={3:'3', 5:'5', 7:'7', 9:'9', 11:'11'},
+                included=False
+            ),
+        ], className="three columns"),
+        html.Div([
+            html.H6(children=['Local Radius']),
+            dcc.Slider(
+                id='local-radius-slider',
+                min=50,
+                max=500,
+                step=5,
+                value=50,
+                marks={3:'3', 5:'5', 7:'7', 9:'9', 11:'11'},
+                included=False
+            ),
+            html.Div(id='local-radius-output')
+        ], className="two columns")
+    ], className="row"),
+    html.Div([
+        html.Div([
+            html.H3('Image to be filled'),
+            DashCanvas(
+                id='annot-canvas',
+                lineWidth=10,
+                filename=app.get_asset_url(filename),
+                width=canvas_width,
+                lineColor='rgba(255, 0, 0, 0.6)',
+                tool="rectangle",
+                hide_buttons=['line', 'zoom', 'pan', 'select'],
+                goButtonTitle="Fill Mask"
+                )], 
+            className="six columns"),
+        html.Div([
+            html.H3('Result'),
+            html.Img(id='image', width=canvas_width)
+        ], className="six columns")
+    ], className="row")
+    ])
 
-@app.callback(Output('image', 'src'), [Input('annot-canvas', 'json_data')])
-def update_image(string):
+@app.callback(Output('annot-canvas', 'lineWidth'),
+            [Input('brush-width-slider', 'value')])
+def update_canvas_linewidth(value):
+    return value
+
+@app.callback(
+    dash.dependencies.Output('local-radius-output', 'children'),
+    [dash.dependencies.Input('local-radius-slider', 'value')])
+def update_output(value):
+    return '{}px'.format(value)
+
+@app.callback(Output('image', 'src'), [Input('annot-canvas', 'json_data'), Input('patch-size-slider', 'value')])
+def update_image(string, patch_size):
     if string:
         data = json.loads(string)
     else:
@@ -40,10 +104,12 @@ def update_image(string):
 
     print(data['objects'], file = sys.stderr)
 
+    image_ID = str(uuid.uuid1())
+
     image_width = int(data['objects'][0]["width"])
     image_height = int(data['objects'][0]["height"])
     
-    mask_filename='mask1.jpg'
+    mask_filename = 'masks/' + image_ID + '.png'
 
     mask = np.zeros((image_height, image_width))
 
@@ -63,7 +129,7 @@ def update_image(string):
     
     plt.imsave(os.getcwd() + app.get_asset_url(mask_filename), mask)
 
-    image_filename = 'pavage.png'
+    image_filename = 'test_images/pavage.png'
     image = Image.open(os.getcwd() + app.get_asset_url(image_filename))
 
     # mask = cv2.imread(os.getcwd() + app.get_asset_url('mask2.jpg'),2)
@@ -72,9 +138,9 @@ def update_image(string):
     #plt.imsave(os.getcwd() + app.get_asset_url("mask2.jpg"), mask)
 
 
-    inpainted = inpaint(image, mask, local_radius=50)
+    inpainted = inpaint(image, mask, patch_size, local_radius=50)
 
-    inpainted_filename = "image3new.PNG"
+    inpainted_filename = 'results/' + image_ID + '.png'
 
     # inpainted_array = Image.fromarray(inpainted)
     # Image.save(inpainted, "/assets/inpainted.jpeg"
@@ -82,7 +148,10 @@ def update_image(string):
     plt.imsave(os.getcwd() + app.get_asset_url(inpainted_filename), inpainted)
 
     return app.get_asset_url(inpainted_filename)
-
+    
+app.css.append_css({
+    'external_url': 'https://codepen.io/chriddyp/pen/bWLwgP.css'
+})
 
 if __name__ == '__main__':
     app.run_server(debug=True, dev_tools_hot_reload = False)
