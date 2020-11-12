@@ -67,12 +67,11 @@ def calcNormalMatrix(center, mask):
     
 def calcGradientMatrix(center, image, mask, patch_size):
     
-    # TODO: find a better method to calc the gradient
     height, width = image.shape[:2]
     
     
     grey_image = rgb2gray(image)
-    grey_image[mask == 1] = None
+    grey_image[mask == 0] = None
 
     gradient = np.nan_to_num(np.array(np.gradient(grey_image)))
     gradient_val = np.sqrt(gradient[0]**2 + gradient[1]**2)
@@ -141,7 +140,7 @@ def distance(target_patch, candidate_patch, mask_patch) :
 #     print(((target_patch - candidate_patch) * mask_patch) ** 2)
     
     mask_patch = np.expand_dims(mask_patch, axis=2)
-
+    
     return np.sum(((target_patch - candidate_patch) * mask_patch) ** 2) / np.sum(mask_patch)
 
 def getOptimalPatch(image, mask, target_patch, patch_size, local_radius = None) :
