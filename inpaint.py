@@ -41,7 +41,7 @@ def getBorderPx(mask, patch_size) :
     
     return border_pxls
 
-def patchConfidence(center, confidence, mask, patch_size) :
+def patchConfidence(center, confidence, patch_size) :
     
     i, j = center
     offset = patch_size//2
@@ -108,7 +108,7 @@ def patchData(center, image, mask, alpha, patch_size) :
     return data
    
 
-def getMaxPriority(border_pxls, confidence, image, mask, alpha, patch_size) :
+def getMaxPriority(border_pxls, confidence, image, mask, alpha, data_significance, patch_size) :
     
     Pp, Cp = 0, 0
     max_pixel = (0, 0)
@@ -121,11 +121,11 @@ def getMaxPriority(border_pxls, confidence, image, mask, alpha, patch_size) :
         if n - offset < 0 or n + offset + 1 > image.shape[0] or m - offset < 0 or m + offset + 1 > image.shape[1] :
             continue
         
-        current_Cp = patchConfidence(pixel, confidence, mask, patch_size)
+        current_Cp = patchConfidence(pixel, confidence, patch_size)
         current_Dp = patchData(pixel, image, mask, alpha, patch_size)
-        #current_Dp = 1
+        # current_Dp = 1
         
-        current_Pp = current_Cp * current_Dp # Pp to change into matrix
+        current_Pp = current_Cp * (current_Dp ** data_significance) # Pp to change into matrix
         
         if current_Pp > Pp :
             Pp = current_Pp
@@ -225,7 +225,7 @@ def fillPatch(image, mask, target_patch, opt_patch, patch_size) :
     
     return image, mask
 
-def inpaint(image, mask, patch_size, alpha=1, local_radius=500) :
+def inpaint(image, mask, patch_size, local_radius, data_significance, alpha=1) :
     
     # assert patch_size is an odd number
     assert(patch_size%2 == 1)
@@ -242,7 +242,7 @@ def inpaint(image, mask, patch_size, alpha=1, local_radius=500) :
         if len(border_pxls) == 0 :
             break
             
-        target_patch, Cp = getMaxPriority(border_pxls, confidence, image, mask, alpha, patch_size)
+        target_patch, Cp = getMaxPriority(border_pxls, confidence, image, mask, alpha, data_significance, patch_size)
 
         opt_patch = getOptimalPatch(image, mask, target_patch, patch_size, local_radius)
 
