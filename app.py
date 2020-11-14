@@ -251,7 +251,7 @@ def update_output(value):
 
 # Main callback for the inpainting
 def mask_from_data(string, data, mask_filename, image_width, image_height, canvas_width, rect_fill) :
-    mask = np.ones((image_height, image_width))
+    mask = np.zeros((image_height, image_width))
 
     if 'fill' in rect_fill : 
         for object in data['objects'] :
@@ -263,9 +263,9 @@ def mask_from_data(string, data, mask_filename, image_width, image_height, canva
                 height = int(object["height"] * image_width / canvas_width)
 
                 rect_mask = getMask(image_width, image_height, left, top, width, height)
-                mask[rect_mask == 0] = 0
+                mask[rect_mask == 0] = 1
     
-    mask[parse_jsonstring(string, (image_height, image_width)) == 1] = 0 
+    mask[parse_jsonstring(string, (image_height, image_width)) == 1] = 1
 
     plt.imsave(os.getcwd() + app.get_asset_url(mask_filename), mask, cmap=cm.gray)
 
@@ -301,7 +301,7 @@ def inpaint_image(string, image_filename, mask_contents, patch_size, local_radiu
         mask_from_data(string, data, mask_filename, image_width, image_height, canvas_width, rect_fill)
     
     mask = np.array(Image.open(os.getcwd() + app.get_asset_url(mask_filename)))
-    mask = 1 * (mask == np.max(mask))[:, :, 0]
+    mask = 1 * (mask == np.min(mask))[:, :, 0]
     print(mask.shape)
 
     # print(mask[0, 0, :])
