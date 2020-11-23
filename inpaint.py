@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.ndimage.filters import convolve
 from skimage.color import rgb2gray
+import math
 
 def normalize(image) :
     return image/np.max(image)
@@ -112,6 +113,7 @@ def getMaxPriority(border_pxls, confidence, image, mask, alpha, data_significanc
     
     Pp, Cp = 0, 0
     max_pixel = (0, 0)
+    # print("border", len(border_pxls))
     
     for pixel in border_pxls :
         
@@ -127,25 +129,26 @@ def getMaxPriority(border_pxls, confidence, image, mask, alpha, data_significanc
         
         current_Pp = current_Cp * (current_Dp ** data_significance) # Pp to change into matrix
         
-        if current_Pp > Pp :
+        if current_Pp >= Pp :
             Pp = current_Pp
             Cp = current_Cp
             max_pixel = pixel
-            
-    return pixel, Cp
+
+    # print("max_pixel", max_pixel)
+    # print("Pp, Cp", Pp, Cp)
+
+    return max_pixel, Cp
+
 
 def distance(target_patch, candidate_patch, mask_patch) :
-     
-#     print((target_patch - candidate_patch) * mask_patch)  
-#     print(((target_patch - candidate_patch) * mask_patch) ** 2)
-    
+
     mask_patch = np.expand_dims(mask_patch, axis=2)
     
     return np.sum(((target_patch - candidate_patch) * mask_patch) ** 2) / np.sum(mask_patch)
 
-def getOptimalPatch(image, mask, target_patch, patch_size, local_radius = None) :
+def getOptimalPatch(image, mask, target_pixel, patch_size, local_radius = None, threshold = None) :
     
-    n, m = target_patch
+    n, m = target_pixel
     
     offset = patch_size//2
     
@@ -159,65 +162,57 @@ def getOptimalPatch(image, mask, target_patch, patch_size, local_radius = None) 
         lower_i = offset
         upper_j = image.shape[1] - offset - 1
         lower_j = offset
-    # print("i : {} - {}, j : {} - {}".format(lower_i, upper_i, lower_j, upper_j))
     
     optimal_patch = (0, 0)
     optimal_distance = 1e9
+    target_patch = image[n - offset : n + offset + 1, m - offset : m + offset + 1, :]           
+    mask_patch = mask[n - offset : n + offset + 1, m - offset : m + offset + 1]
     
+    threshold_targets = []
+
     for i in range(lower_i, upper_i + 1) :
         for j in range(lower_j, upper_j + 1) :
-            
-#             print(i, "-", j)
-            
+            # if candidate patch is in part in mask then skip            
             if np.any(mask[i - offset : i + offset + 1, j - offset : j + offset + 1] == 0) :
                 continue
             
-            target_patch = image[n - offset : n + offset + 1, m - offset : m + offset + 1, :]
-            
-            # if candidate patch in part in mask break
-            candidate_patch = image[i - offset : i + offset + 1, j - offset : j + offset + 1, :]            
-            mask_patch = mask[n - offset : n + offset + 1, m - offset : m + offset + 1]
-            
-#             print("target patch : \n", target_patch)            
-#             print("candidate patch : \n\n", candidate_patch)            
-#             print("mask patch : \n", mask_patch)
-            
-            current_distance = distance(target_patch, candidate_patch, mask_patch)
-            
-#             print("current distance : {}".format(current_distance))
-            
-            if current_distance < optimal_distance :
-                optimal_patch = (i, j)
-                optimal_distance = current_distance
+            d_center = np.sqrt(np.sum((image[n, m, :] - image[i, j, :]) ** 2))
+            if threshold == None or d_center < threshold :
+                threshold_targets.append((i, j, d_center))
+
+    threshold_targets.sort(key = lambda x : x[2])
+    threshold_targets = threshold_targets[:int(math.sqrt(len(threshold_targets)))]
+
+    for i, j, d_center in threshold_targets :
+        candidate_patch = image[i - offset : i + offset + 1, j - offset : j + offset + 1, :]
+        current_distance = distance(target_patch, candidate_patch, mask_patch)
+        
+        if current_distance < optimal_distance :
+            optimal_patch = (i, j)
+            optimal_distance = current_distance
     
     return optimal_patch
 
-def updateConfidence(confidence, Cp, target_patch, mask, patch_size) :   
+def updateConfidence(confidence, Cp, target_pixel, mask, patch_size) :   
     
-    i, j = target_patch
+    i, j = target_pixel
     offset = patch_size//2
 
     confidence[i - offset : i + offset + 1, j - offset : j + offset + 1] = confidence[i - offset : i + offset + 1, j - offset : j + offset + 1] + (1 - mask[i - offset : i + offset + 1, j - offset : j + offset + 1]) * Cp
-    
+
     return confidence
 
-def fillPatch(image, mask, target_patch, opt_patch, patch_size) :
+def fillPatch(image, mask, target_pixel, opt_patch, patch_size) :
     
-    n, m = target_patch
+    n, m = target_pixel
     i, j = opt_patch
     offset = patch_size//2
     
     un, dn, lm, rm = n - offset, n + offset + 1, m - offset, m + offset + 1
     ui, di, lj, rj = i - offset, i + offset + 1, j - offset, j + offset + 1
     
-#     mask = np.expand_dims(mask, axis=2)
-#     print("image * mask \n", image * mask)
-    
     mask_patch = mask[un: dn, lm: rm]
     mask_patch = np.expand_dims(mask_patch, axis=2)
-    
-#     print("image[un: dn, lm: rm, :] * mask_patch \n", image[un: dn, lm: rm, :] * mask_patch)
-#     print("image[ui: di, lj: rj, :] * (1 - mask_patch) \n", image[ui: di, lj: rj, :] * (1 - mask_patch))
     
     image[un: dn, lm: rm, :] = image[un: dn, lm: rm, :] * mask_patch + image[ui: di, lj: rj, :] * (1 - mask_patch)
     
@@ -225,13 +220,13 @@ def fillPatch(image, mask, target_patch, opt_patch, patch_size) :
     
     return image, mask
 
-def inpaint(image, mask, patch_size, local_radius, data_significance, alpha=1) :
+def inpaint(image, mask, patch_size, local_radius, data_significance, alpha=1, threshold = None) :
     
     # assert patch_size is an odd number
     assert(patch_size%2 == 1)
     
     confidence = np.copy(mask)
-    image = normalize(image) # * np.expand_dims(mask, axis=2)
+    image = normalize(image)
     
     start_zeros = np.sum((1 - mask))
 
@@ -242,13 +237,13 @@ def inpaint(image, mask, patch_size, local_radius, data_significance, alpha=1) :
         if len(border_pxls) == 0 :
             break
             
-        target_patch, Cp = getMaxPriority(border_pxls, confidence, image, mask, alpha, data_significance, patch_size)
+        target_pixel, Cp = getMaxPriority(border_pxls, confidence, image, mask, alpha, data_significance, patch_size)
 
-        opt_patch = getOptimalPatch(image, mask, target_patch, patch_size, local_radius)
+        opt_patch = getOptimalPatch(image, mask, target_pixel, patch_size, local_radius, threshold)
 
-        confidence = updateConfidence(confidence, Cp, target_patch, mask, patch_size)
+        confidence = updateConfidence(confidence, Cp, target_pixel, mask, patch_size)
 
-        image, mask = fillPatch(image, mask, target_patch, opt_patch, patch_size)
+        image, mask = fillPatch(image, mask, target_pixel, opt_patch, patch_size)
         
         print("Almost there ! ===> {:.1f}/{}".format((1 - np.sum((1 - mask)) / start_zeros) * 100, 100), sep='\n')
         
