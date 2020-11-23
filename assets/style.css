@@ -1,0 +1,143 @@
+h1 {
+    font-size: 3.5em;
+}
+
+hr {
+    margin : 2rem 0rem;
+}
+
+.navbar {
+    z-index: 2;
+}
+
+.navbar-dark .navbar-collapse {
+    background-color: black;
+}
+
+.nav-item {
+    margin: 1rem;
+}
+
+.page-header {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: -1;
+    width: 100%;
+    height: 90vh;
+    background-position: 50%;
+    background-size: cover;
+    left: 0;
+    top: 0;
+    background-image: url(background/bg3.jpg); 
+    transform: translate3d(0px, 0px, 0px);
+    margin: 0 0;
+    overflow: hidden;
+}
+
+.brand {
+    color: white;
+    text-align: center;
+}
+
+.brand h1 {
+    font-size: 8rem;
+}
+
+@media screen and (max-width: 700px) {
+    .brand h1 {
+        font-size: 5rem;
+    }
+}
+
+.brand h3 {
+    font-size: 2rem;
+}
+
+.main {
+    margin: -60px 50px 10%;
+    border-radius: 20px;
+    box-shadow: 0 16px 24px 2px rgba(0,0,0,.14), 0 6px 30px 5px rgba(0,0,0,.12), 0 8px 10px -5px rgba(0,0,0,.2);
+    background: #ffffffee;
+    z-index: 3;
+    box-sizing: border-box;
+    padding : 40px;
+}
+
+#upload-image {
+    width : 100%;
+}
+
+.upload-section {
+    font-size: 1.3em;
+    display : flex;
+    align-items : center;
+    justify-content: center;
+    transition: all .2s ease-in-out;
+    border-width: 1px;
+    border-style: dashed;
+    border-radius: 5px;
+    text-align: center;
+    margin: 10px 0px;
+}
+
+.upload-section:hover, .upload-section:active {
+    cursor : pointer;
+    transform: scale(1.04);
+    border-color: #1a831f;
+    background-color: #c2c2c265;
+}
+
+.upload-text-wrapper {
+    color: black;
+}
+
+
+.sliders {
+    padding : 0px 5px;
+}
+
+canvas {
+    width: 100% !important;
+}
+
+@media only screen and (min-width: 500px) and (max-width: 850px) {
+    /*set canvas witdh to be 600px;*/
+    .canvas {
+        width: 100% !important;
+        height: 333.75px !important;
+    }
+  
+    .canvas-container {
+        width: 100% !important;
+        height: 333.75px !important;
+    }
+  }
+
+
+/* Footer style */
+.page-footer {
+    text-align: center;
+    height: 5rem;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+    z-index: 2;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    background-color: black;
+    color: white;
+    text-align: center;
+}
+
+.page-footer ul {
+    margin: 0;
+}
+
+.page-footer li {
+    float: left;
+    margin: 0rem 2rem;
+}
