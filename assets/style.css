@@ -7,6 +7,7 @@ hr {
 }
 
 .navbar {
+    font-size: 1.2rem;
     z-index: 2;
 }
 
@@ -16,6 +17,14 @@ hr {
 
 .nav-item {
     margin: 1rem;
+}
+
+.navbar i {
+    margin: 0rem 0.8rem;
+}
+
+.fa-github {
+    font-size: 1.5rem;
 }
 
 .page-header {
@@ -118,6 +127,7 @@ canvas {
 
 /* Footer style */
 .page-footer {
+    font-size: 1.2rem;
     text-align: center;
     height: 5rem;
     display: flex;
@@ -140,4 +150,9 @@ canvas {
 .page-footer li {
     float: left;
     margin: 0rem 2rem;
+}
+
+.page-footer a {
+    text-decoration: none;
+    color: white;
 }

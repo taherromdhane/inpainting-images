@@ -40,12 +40,23 @@ LOGO = "https://images.plot.ly/logo/new-branding/plotly-logomark.png"
 
 navbar_layout = dbc.NavbarSimple(
                     children=[
-                        dbc.NavItem(dbc.NavLink("Page 1", href="#")),
+                        dbc.NavItem(
+                            dbc.NavLink(
+                                [html.I(className="fa fa-github"), "View Source Code"], 
+                                href="https://github.com/taherromdhane/inpainting-images"
+                                )
+                        ),
+                        dbc.NavItem(
+                            dbc.NavLink(
+                                [html.I(className="fa fa-file"), "View Report"], 
+                                href="https://github.com/taherromdhane/inpainting-images"
+                                )
+                        ),
                         dbc.DropdownMenu(
                             children=[
-                                dbc.DropdownMenuItem("More pages", header=True),
-                                dbc.DropdownMenuItem("Page 2", href="#"),
-                                dbc.DropdownMenuItem("Page 3", href="#"),
+                                dbc.DropdownMenuItem("More Links", header=True),
+                                dbc.DropdownMenuItem("Github", href="https://github.com/taherromdhane"),
+                                dbc.DropdownMenuItem("LinkedIn", href="https://www.linkedin.com/in/taher-romdhane/"),
                             ],
                             nav=True,
                             in_navbar=True,
@@ -57,8 +68,6 @@ navbar_layout = dbc.NavbarSimple(
                         'height' : '50px',
                         'paddingRight' : '3rem',
                         'paddingLeft' : '3rem',
-
-
                     },
                     brand="The Inpainter",
                     brand_href="#",
@@ -273,11 +282,11 @@ def getInpaintLayout(image_content, image_filename) :
                                     DashCanvas(
                                         id='annot-canvas',
                                         lineWidth=10,
-                                        #width=CANVAS_WIDTH,
-                                        #height=CANVAS_HEIGHT,
+                                        width=CANVAS_WIDTH,
+                                        height=CANVAS_HEIGHT,
                                         lineColor='rgba(255, 0, 0, 0.6)',
-                                        image_content=image_content,
-                                        #filename=image_filename,
+                                        #image_content=image_content,
+                                        filename=image_filename,
                                         tool="rectangle",
                                         hide_buttons=['line', 'pan', 'select'],
                                         goButtonTitle="Fill Mask",
@@ -349,12 +358,17 @@ footer_layout = html.Footer(
                     [
                         html.Ul(
                             [
-                                html.Li("Contact"),
-                                html.Li("Portfolio")
+                                html.Li(html.A("Contact", href="mailto:romdhane.attaher@gmail.com")),
+                                html.Li(html.A("Portfolio", href="https://github.com/taherromdhane"))
                             ]
                         ),
                         html.Div(
-                            html.Span("© 2020 Made With love and coffee by Tahér & Saif")
+                            html.Span([
+                                "© 2020 Made With ", 
+                                html.I(className="fa fa-heart heart"),
+                                " & ", 
+                                html.I(className="fa fa-coffee"), 
+                                " by Tahér & Saif"])
                         )
                     ],
                     className = "page-footer footer-black"

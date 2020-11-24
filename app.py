@@ -1,3 +1,4 @@
+import flask
 import dash
 from dash.exceptions import PreventUpdate
 from dash.dependencies import Input, Output, State
@@ -15,9 +16,10 @@ import sys
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import numpy as np
-import cv2
 import uuid 
 import time
+
+from gevent.pywsgi import WSGIServer
 
 from utils import getMask
 from inpaint import inpaint
@@ -25,8 +27,9 @@ from layout import *
 
 PREVIEW_HEIGHT = '500px'
 
-app = dash.Dash(__name__, serve_locally=False, title='Inpainter')
+server = flask.Flask(__name__) # define flask app.server
 
+app = dash.Dash(__name__, title='Inpainter', eager_loading=True, server=server)
 
 app.index_string = '''
 <!DOCTYPE html>
@@ -36,6 +39,9 @@ app.index_string = '''
         <meta content="width=device-width, initial-scale=1.0" name="viewport">
         <title>{%title%}</title>
         {%favicon%}
+        <link rel="stylesheet" href="https://codepen.io/chriddyp/pen/bWLwgP.css" crossorigin="anonymous">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2" crossorigin="anonymous">
+        <link href="https://maxcdn.bootstrapcdn.com/font-awesome/latest/css/font-awesome.min.css" rel="stylesheet">
         {%css%}
     </head>
     <body>
@@ -212,8 +218,6 @@ def inpaint_image(string, image_filename, mask_contents, patch_size, local_radiu
         data = json.loads(string)
     else:
         raise PreventUpdate
-    
-    # print(data)
 
     image_ID = image_filename.split('/')[3].split('.')[0]
     image = np.array(Image.open(os.getcwd() + image_filename))
@@ -230,11 +234,10 @@ def inpaint_image(string, image_filename, mask_contents, patch_size, local_radiu
         mask_from_data(string, data, mask_filename, image_width, image_height, CANVAS_WIDTH, rect_fill)
     
     mask = np.array(Image.open(os.getcwd() + app.get_asset_url(mask_filename)))
-    mask = 1 * (mask == np.min(mask))[:, :, 0]
-    print(mask.shape)
+    if len(mask.shape) >= 3 :
+        mask = 1 * (mask == np.min(mask))[:, :, 0]
 
     # print(mask[0, 0, :])
-    print(patch_size, local_radius, data_significance)
 
     if 'use' not in use_data :
         data_significance = 0
@@ -270,4 +273,8 @@ app.css.append_css({
 app.config['suppress_callback_exceptions'] = True
 
 if __name__ == '__main__':
-    app.run_server(debug=True, dev_tools_hot_reload = False)
+    # app.run_server(debug=True, dev_tools_hot_reload = False)
+
+    http_server = WSGIServer(('0.0.0.0', int(os.environ.get("PORT", 5000))), server)
+    print(int(os.environ.get("PORT", 5000)), file=sys.stderr)
+    http_server.serve_forever()
