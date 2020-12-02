@@ -22,14 +22,19 @@ import time
 from gevent.pywsgi import WSGIServer
 
 from utils import getMask
-from inpaint import inpaint
+from inpaint import Inpainter
 from layout import *
+
+from rq import Queue
+from rq.job import Job
+from worker import conn
 
 PREVIEW_HEIGHT = '500px'
 
 server = flask.Flask(__name__) # define flask app.server
-
 app = dash.Dash(__name__, title='Inpainter', eager_loading=True, server=server)
+
+q = Queue(connection=conn)
 
 app.index_string = '''
 <!DOCTYPE html>
@@ -63,13 +68,14 @@ main_layout =   html.Div([
                 className = 'main')
 
 app.layout = html.Div([
-    navbar_layout,
-    header_layout,
-    main_layout,
-    footer_layout
+        dcc.Store(id='session', storage_type='session'),
+        navbar_layout,
+        header_layout,
+        main_layout,
+        footer_layout
     ])
 
-# Utility function to display contents with uploaded image
+# Utility function to save contents to memory
 def save_image(contents, filename):
     
     data = contents.encode("utf8").split(b";base64,")[1]
@@ -246,7 +252,20 @@ def inpaint_image(string, image_filename, mask_contents, patch_size, local_radiu
         threshold = None
 
     start_time = time.time()
-    inpainted = inpaint(image, mask, patch_size, local_radius = local_radius, data_significance = data_significance, threshold = 0.3)
+
+    predict_job = q.enqueue(inpaint, image, mask, patch_size, local_radius = local_radius, data_significance = data_significance, threshold = threshold)
+
+    return html.Div(
+                [
+                    dcc.Interval(id="progress-interval", n_intervals=0, interval=500),
+                    dbc.Progress(id="progress", striped=True, animated=True, value=0),
+                ]
+            )   
+
+
+
+
+    inpainted = ()
     print("ran inpainting algorithm in {} : ".format(time.time() - start_time))
 
     inpainted_filename = 'results/' + image_ID + '.png'
@@ -261,6 +280,8 @@ def inpaint_image(string, image_filename, mask_contents, patch_size, local_radiu
                     src = app.get_asset_url(inpainted_filename)
                 )
             ]
+
+    
     
     
 app.css.append_css({
