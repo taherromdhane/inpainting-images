@@ -10,7 +10,6 @@ import dash_bootstrap_components as dbc
 
 from PIL import Image, ImageOps
 import json
-import base64
 import os
 import sys
 import matplotlib.pyplot as plt
@@ -75,13 +74,7 @@ app.layout = html.Div([
         footer_layout
     ])
 
-# Utility function to save contents to memory
-def save_image(contents, filename):
-    
-    data = contents.encode("utf8").split(b";base64,")[1]
 
-    with open(os.getcwd() + app.get_asset_url(filename), "wb") as fp:
-        fp.write(base64.decodebytes(data))  
 
 # Navbar callback
 @app.callback(
@@ -94,27 +87,14 @@ def toggle_navbar_collapse(n, is_open):
         return not is_open
     return is_open
 
-# Utility function to show preview of uploaded file
-def parse_contents(contents, filename):
-    return html.Div([
-        #html.H5(filename),
-        html.Img(
-            src = contents,
-            style = {
-                'width' : '100%',
-                'height' : 'auto'
-            },
-            className = 'preview-image'
-        ),
-    ])
-
-# Upload callback
+# Upload callbacks
 @app.callback(
     [
         Output('upload-preview', 'children'), 
         Output('upload-image', 'style'), 
         Output('main-div', 'children'),        
-        Output('upload-text', 'children')
+        Output('upload-text', 'children'),
+        Output('session', 'data')
     ],
     [
         Input('inpaint-button', 'n_clicks'),
@@ -135,7 +115,7 @@ def update_output(inpaint_clicks, image_content, change_clicks, name, date):
             raise PreventUpdate
             
         else :
-            return parse_contents(image_content, name), {'height': '100px'}, dash.no_update, 'Change Image'
+            return parse_contents(image_content, name), {'height': '100px'}, dash.no_update, 'Change Image', dash.no_update
 
     else :
         if image_content is None:
@@ -146,11 +126,11 @@ def update_output(inpaint_clicks, image_content, change_clicks, name, date):
 
             image_ID = str(uuid.uuid1())
             image_filename = 'source/' + image_ID + '.png'
-            save_image(image_content, image_filename)
+            save_image(image_content, app.get_asset_url(image_filename))
             
             inpaint_layout = getInpaintLayout(image_content, app.get_asset_url(image_filename))
 
-            return dash.no_update, dash.no_update, inpaint_layout, dash.no_update
+            return dash.no_update, dash.no_update, inpaint_layout, dash.no_update, {'image_ID': image_ID}
     
 # Callbacks for inpainting parameters 
 @app.callback(
@@ -186,47 +166,36 @@ def update_output(value):
     return value
 
 
-# Main callback for the inpainting
-def mask_from_data(string, data, mask_filename, image_width, image_height, canvas_width, rect_fill) :
-    mask = np.zeros((image_height, image_width))
-
-    if 'fill' in rect_fill : 
-        for object in data['objects'] :
-            if object["type"] == "rect" :
-                    
-                left = int(object["left"] * image_width / canvas_width)
-                top = int(object["top"] * image_width / canvas_width)
-                width = int(object["width"] * image_width / canvas_width)
-                height = int(object["height"] * image_width / canvas_width)
-
-                rect_mask = getMask(image_width, image_height, left, top, width, height)
-                mask[rect_mask == 0] = 1
-    
-    mask[parse_jsonstring(string, (image_height, image_width)) == 1] = 1
-
-    plt.imsave(os.getcwd() + app.get_asset_url(mask_filename), mask, cmap=cm.gray)
-
+# Main callback for inpainting
 @app.callback(
     Output('result-div', 'children'), 
-    [Input('annot-canvas', 'json_data'),
-    Input('annot-canvas', 'filename'),
-    Input('upload-mask', 'contents'),
-    Input('patch-size-slider', 'value'), 
-    Input('local-radius-slider', 'value'),  
-    Input('data-term-slider', 'value'), 
-    Input('center-similarity-slider', 'value'),
-    Input('fill-rect', 'value'),    
-    Input('use-data-term', 'value'),    
-    Input('use-center-threshold', 'value')],
+    [
+        Input('annot-canvas', 'json_data'),
+        Input('session', 'modified_timestamp'),
+        Input('upload-mask', 'contents'),
+        Input('patch-size-slider', 'value'), 
+        Input('local-radius-slider', 'value'),  
+        Input('data-term-slider', 'value'), 
+        Input('center-similarity-slider', 'value'),
+        Input('fill-rect', 'value'),    
+        Input('use-data-term', 'value'),    
+        Input('use-center-threshold', 'value')
+    ],
+    State('session', 'data'),
     prevent_initial_call=True)
-def inpaint_image(string, image_filename, mask_contents, patch_size, local_radius, data_significance, threshold, rect_fill, use_data, use_threshold):
+def inpaint_image(string, ts, mask_contents, patch_size, local_radius, data_significance, \
+                                        threshold, rect_fill, use_data, use_threshold, session_data):
     if string:
         data = json.loads(string)
     else:
         raise PreventUpdate
 
-    image_ID = image_filename.split('/')[3].split('.')[0]
-    image = np.array(Image.open(os.getcwd() + image_filename))
+    if ts is None:
+            raise PreventUpdate
+
+    image_ID = session_data.get('image_ID', '')
+    image_filename = 'source/' + image_ID + '.png'
+    image = np.array(Image.open(os.getcwd() + app.get_asset_url(image_filename)))
 
     image_width = image.shape[1]
     image_height = image.shape[0]
@@ -235,9 +204,9 @@ def inpaint_image(string, image_filename, mask_contents, patch_size, local_radiu
     print(mask_filename)
 
     if mask_contents is not None :
-        save_image(mask_contents, mask_filename)
+        save_image(mask_contents, app.get_asset_url(mask_filename))
     else : 
-        mask_from_data(string, data, mask_filename, image_width, image_height, CANVAS_WIDTH, rect_fill)
+        mask_from_data(string, data, app.get_asset_url(mask_filename), image_width, image_height, CANVAS_WIDTH, rect_fill)
     
     mask = np.array(Image.open(os.getcwd() + app.get_asset_url(mask_filename)))
     if len(mask.shape) >= 3 :
@@ -253,33 +222,53 @@ def inpaint_image(string, image_filename, mask_contents, patch_size, local_radiu
 
     start_time = time.time()
 
-    predict_job = q.enqueue(inpaint, image, mask, patch_size, local_radius = local_radius, data_significance = data_significance, threshold = threshold)
-
-    return html.Div(
-                [
-                    dcc.Interval(id="progress-interval", n_intervals=0, interval=500),
-                    dbc.Progress(id="progress", striped=True, animated=True, value=0),
-                ]
-            )   
-
-
-
-
-    inpainted = ()
-    print("ran inpainting algorithm in {} : ".format(time.time() - start_time))
 
     inpainted_filename = 'results/' + image_ID + '.png'
-    plt.imsave(os.getcwd() + app.get_asset_url(inpainted_filename), inpainted)
+    progress_filename =  'progress/' + image_ID + '.txt'
+
+    predict_job = q.enqueue(inpainting_logic, image, mask, patch_size, local_radius, data_significance, threshold, app.get_asset_url(inpainted_filename))
 
     return [
                 html.H3('Result'),
                 html.Hr(style = {'width' : '80%'}),
-                html.Img(
-                    id='image', 
-                    width=CANVAS_WIDTH,
-                    src = app.get_asset_url(inpainted_filename)
-                )
-            ]
+                html.Div(
+                    [
+                        dcc.Interval(id="progress-interval", n_intervals=0, interval=100),
+                        dbc.Progress(id="progress", striped=True, animated=True, value=0),
+                    ]
+                ),
+                html.Div(
+                    [
+                        dcc.Interval(id="result-interval", n_intervals=0, interval=1000),
+                        html.Img(
+                            id='result-image', 
+                            width=CANVAS_WIDTH,
+                            src = app.get_asset_url(inpainted_filename)
+                        )
+                    ]
+                )   
+            ] 
+
+
+@app.callback(
+    [Output("progress", "value"), Output("progress", "children")],
+    [Input("progress-interval", "n_intervals")],
+)
+def update_progress(n):
+    # check progress of some background process, in this example we'll just
+    # use n_intervals constrained to be in 0-100
+    progress = min(n % 110, 100)
+    # only add text after 5% progress to ensure text isn't squashed too much
+    return progress, f"{progress} %" if progress >= 5 else ""
+
+
+
+    inpainted_filename = 'results/' + image_ID + '.png'
+    progress_filename =  'progress/' + image_ID + '.txt'
+    
+    print("ran inpainting algorithm in {} : ".format(time.time() - start_time))
+
+    
 
     
     
