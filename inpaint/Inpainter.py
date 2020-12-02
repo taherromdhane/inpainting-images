@@ -313,4 +313,36 @@ class Inpainter :
             
         return self.image
 
-    # def inpaint_one_iteration(self, image, mask) :
+    def inpaint_with_progress(self, image, mask) :
+
+        self.image = image
+        self.mask = mask
+        if mask.shape[:2] != image.shape[:2] :
+            raise ValueError("Mask and image must be of the same shape")
+
+        
+        self.confidence = np.copy(self.mask)
+        self._normalize_image()
+        
+        start_zeros = np.sum((1 - self.mask))
+
+        # change to identify border, then calculate priorities
+        while True :
+
+            self._getBorderPx(patch_size)
+            if len(self.border_pxls) == 0 :
+                break
+                
+            target_pixel, Cp = self._getMaxPriority()
+
+            opt_patch = self._getOptimalPatch(target_pixel)
+
+            self._updateConfidence(target_pixel)
+
+            self._fillPatch(target_pixel, opt_patch)
+
+            progress = (1 - np.sum((1 - self.mask)) / start_zeros) * 100
+            yield self.image, progress 
+            
+            print("Almost there ! ===> {:.1f}/{}".format(progress, 100), sep='\n')
+            
