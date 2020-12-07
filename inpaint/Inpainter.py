@@ -220,7 +220,7 @@ class Inpainter :
         for i in range(lower_i, upper_i + 1) :
             for j in range(lower_j, upper_j + 1) :
                 # if candidate patch is in part in mask then skip            
-                if np.any(self._getPatch(mask, (i, j)) == 0) :
+                if np.any(self._getPatch(self.mask, (i, j)) == 0) :
                     continue
                 
                 d_center = np.sqrt(np.sum((self.image[n, m, :] - self.image[i, j, :]) ** 2))
@@ -228,7 +228,7 @@ class Inpainter :
                     threshold_targets.append((i, j, d_center))
 
         threshold_targets.sort(key = lambda x : x[2])
-        threshold_targets = threshold_targets[:int(math.sqrt(len(threshold_targets)))]
+        # threshold_targets = threshold_targets[:int(math.sqrt(len(threshold_targets)))]
 
         for i, j, d_center in threshold_targets :
             candidate_patch = self._getPatch(self.image, (i, j))
@@ -278,8 +278,26 @@ class Inpainter :
         self.data_significance = data_significance
         self.alpha = alpha
         self.threshold = threshold
+        self.start_zeros = None
 
-        
+    def _inpaintingIteration(self) :
+
+        self._getBorderPx()
+
+        self.progress = 100
+
+        if len(self.border_pxls) == 0 :
+            return
+            
+        target_pixel, Cp = self._getMaxPriority()
+
+        opt_patch = self._getOptimalPatch(target_pixel)
+
+        self._updateConfidence(Cp, target_pixel)
+
+        self._fillPatch(target_pixel, opt_patch)
+
+        self.progress = (1 - np.sum((1 - self.mask)) / self.start_zeros) * 100
 
     def inpaint(self, image, mask) :
         
@@ -287,33 +305,46 @@ class Inpainter :
         self.mask = mask
         if mask.shape[:2] != image.shape[:2] :
             raise ValueError("Mask and image must be of the same shape")
-
         
         self.confidence = np.copy(self.mask)
         self._normalize_image()
         
-        start_zeros = np.sum((1 - self.mask))
+        self.start_zeros = np.sum((1 - self.mask))
 
-        # change to identify border, then calculate priorities
         while True :
 
-            self._getBorderPx(patch_size)
-            if len(self.border_pxls) == 0 :
+            self._inpaintingIteration()
+            print("Almost there ! ===> {:.1f}/{}".format(self.progress, 100), sep='\n')
+
+            if self.progress >= 100 :
                 break
-                
-            target_pixel, Cp = self._getMaxPriority()
-
-            opt_patch = self._getOptimalPatch(target_pixel)
-
-            self._updateConfidence(target_pixel)
-
-            self._fillPatch(target_pixel, opt_patch)
-            
-            print("Almost there ! ===> {:.1f}/{}".format((1 - np.sum((1 - self.mask)) / start_zeros) * 100, 100), sep='\n')
             
         return self.image
 
-    def inpaint_with_progress(self, image, mask) :
+    def inpaintOneIteration(self, image, mask) :
+        
+        self.image = image
+        self.mask = mask
+        if mask.shape[:2] != image.shape[:2] :
+            raise ValueError("Mask and image must be of the same shape")
+        
+        self.confidence = np.copy(self.mask)
+        self._normalize_image()
+        
+        # change to consider the case where image changes
+        if not self.start_zeros :
+            self.start_zeros = np.sum((1 - self.mask))
+        print("start_zeros : ", self.start_zeros)
+        self._inpaintingIteration()
+
+        print("Almost there ! ===> {:.1f}/{}".format(self.progress, 100), sep='\n')
+
+        if self.progress >= 100 :
+            self.start_zeros = None
+            
+        return self.image, self.mask, self.progress
+
+    def inpaintWithSteps(self, image, mask) :
 
         self.image = image
         self.mask = mask
@@ -324,25 +355,17 @@ class Inpainter :
         self.confidence = np.copy(self.mask)
         self._normalize_image()
         
-        start_zeros = np.sum((1 - self.mask))
+        self.start_zeros = np.sum((1 - self.mask))
 
-        # change to identify border, then calculate priorities
         while True :
 
-            self._getBorderPx(patch_size)
-            if len(self.border_pxls) == 0 :
+            self._inpaintingIteration()
+
+            print("Almost there ! ===> {:.1f}/{}".format(self.progress, 100), sep='\n')
+
+            yield self.image, self.progress, self.mask
+
+            if self.progress >= 100 :
                 break
-                
-            target_pixel, Cp = self._getMaxPriority()
-
-            opt_patch = self._getOptimalPatch(target_pixel)
-
-            self._updateConfidence(target_pixel)
-
-            self._fillPatch(target_pixel, opt_patch)
-
-            progress = (1 - np.sum((1 - self.mask)) / start_zeros) * 100
-            yield self.image, progress 
             
-            print("Almost there ! ===> {:.1f}/{}".format(progress, 100), sep='\n')
             

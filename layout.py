@@ -314,6 +314,13 @@ def getInpaintLayout(image_content, image_filename) :
                                     ],
                                     value = []
                                     ),
+                                dcc.Checklist(
+                                    id='live-preview',
+                                    options=[
+                                        {'label': 'Live Preview', 'value': 'show'},
+                                    ],
+                                    value = []
+                                    ),
                                 html.Div([
                                     dcc.Upload(
                                         id = 'upload-mask',
