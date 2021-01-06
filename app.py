@@ -235,20 +235,30 @@ def inpaint_image(string, ts, mask_contents, patch_size, local_radius, data_sign
     with open(os.getcwd() + app.get_asset_url(progress_filename), 'w') as fp :
         fp.write("0")
 
-    # predict_job = q.enqueue(inpaintingLogic, image, mask, patch_size, local_radius, data_significance, \
-    #                           threshold, live_preview, app.get_asset_url(inpainted_filename), app.get_asset_url(progress_filename))
+    predict_job = q.enqueue(
+                        inpaintingLogic, 
+                        image, 
+                        mask, 
+                        patch_size, 
+                        local_radius, 
+                        data_significance,
+                        threshold, 
+                        live_preview, 
+                        app.get_asset_url(inpainted_filename), 
+                        app.get_asset_url(progress_filename)
+                    )
     
-    inpaintingLogic(
-        image,
-        mask,
-        patch_size,
-        local_radius,
-        data_significance,
-        threshold,
-        live_preview,
-        app.get_asset_url(inpainted_filename),
-        app.get_asset_url(progress_filename)
-    )
+    # inpaintingLogic(
+    #     image,
+    #     mask,
+    #     patch_size,
+    #     local_radius,
+    #     data_significance,
+    #     threshold,
+    #     live_preview,
+    #     app.get_asset_url(inpainted_filename),
+    #     app.get_asset_url(progress_filename)
+    # )
 
     return [
                 html.H3('Result'),

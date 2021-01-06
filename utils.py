@@ -131,6 +131,6 @@ def inpaintingLogic(
                 inpainted[mask == 0] = 0
                 plt.imsave(os.getcwd() + inpainted_filepath, inpainted)
                 seconds_passed = elapsed
-                print("elapsed : ", elapsed)
+                # print("elapsed : ", elapsed)
 
     plt.imsave(os.getcwd() + inpainted_filepath, inpainted)
