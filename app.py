@@ -30,12 +30,12 @@ PREVIEW_HEIGHT = '500px'
 server = flask.Flask(__name__) # define flask app.server
 app = dash.Dash(__name__, title='Inpainter', eager_loading=True, server=server)
 
-# Initialize Redis Queue
-# from rq import Queue
-# from rq.job import Job
-# from worker import conn
+Initialize Redis Queue
+from rq import Queue
+from rq.job import Job
+from worker import conn
 
-# q = Queue(connection=conn)
+q = Queue(connection=conn)
 
 # Modify app layout to include bootstrap and custom css
 app.index_string = '''
