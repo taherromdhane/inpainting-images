@@ -30,6 +30,7 @@ PREVIEW_HEIGHT = '500px'
 TEST_DIR = 'test_images'
 CANVAS_WIDTH = 500
 CANVAS_HEIGHT = 800
+MAX_DIMENSION = 300
 
 # Initialize app
 server = flask.Flask(__name__) # define flask app.server
@@ -81,7 +82,6 @@ app.layout = html.Div([
         main_layout,
         footer_layout
     ])
-
 
 
 # Navbar callback
@@ -168,28 +168,23 @@ def update_output(inpaint_clicks, image_content, sample_img_data, date_upload, n
     else :
         if image_content is not None or source is not None:
             print(date_upload, date_sample)
-            if date_upload is not None and (date_sample is None or date_upload > date_sample) :
-                print(name)
 
-                image_ID = str(uuid.uuid1())
-                image_filename = 'source/' + image_ID + '.png'
+            image_ID = str(uuid.uuid1())
+            image_filename = 'source/' + image_ID + '.png'
+
+            if date_upload is not None and (date_sample is None or date_upload > date_sample) :
                 saveImage(image_content, app.get_asset_url(image_filename))
+                reduceImageSize(app.get_asset_url(image_filename)[1:], max_dimension)
                 
                 inpaint_layout = getInpaintLayout(image_content, app.get_asset_url(image_filename), CANVAS_WIDTH, CANVAS_HEIGHT)
 
-                return dash.no_update, dash.no_update, inpaint_layout, dash.no_update, {'image_ID': image_ID}
-
             else :
-                print(source)
-
-                image_ID = str(uuid.uuid1())
-                image_filename = 'source/' + image_ID + '.png'
-
                 shutil.copy(app.get_asset_url(TEST_DIR)[1:] + "/" + source, app.get_asset_url(image_filename)[1:])
+                reduceImageSize(app.get_asset_url(image_filename)[1:], MAX_DIMENSION)
 
                 inpaint_layout = getInpaintLayout(None, app.get_asset_url(image_filename), CANVAS_WIDTH, CANVAS_HEIGHT)
 
-                return dash.no_update, dash.no_update, inpaint_layout, dash.no_update, {'image_ID': image_ID}
+            return dash.no_update, dash.no_update, inpaint_layout, dash.no_update, {'image_ID': image_ID}
 
         else :
             raise PreventUpdate

@@ -46,6 +46,14 @@ def parseContentsDir(source, filename):
         ),
     ])
 
+def reduceImageSize(source, max_dimension) :
+    im = Image.open(source)
+    width, height = im.size
+
+    ratio = max(width / max_dimension, height / max_dimension)
+    if ratio > 1 :
+        im = im.resize((int(width / ratio), int(height / ratio)))
+        im.save(source)
 
 # Utility function to get rectangular mask from dash canvas
 def getMask(image_width, image_height, left, top, width, height) :
