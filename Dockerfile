@@ -8,7 +8,7 @@ WORKDIR /bundle
 COPY . .
 
 # install dependencies
-RUN pip install --upgrade pip	
+RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 
 # expose application port (removed for heroku because it uses dynamic port)
@@ -23,4 +23,4 @@ ENV FLASK_APP=server
 ENV FLASK_ENV=development
 
 # Run run.py when the container launches
-CMD ["gunicorn", "app:server"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "app:server", "--timeout", "600"]

@@ -102,6 +102,12 @@ hr {
     color: black;
 }
 
+.sample-img-card:hover, .sample-img-card:active {
+    cursor : pointer;
+    transform: scale(1.1);
+    border-color: #1a831f;
+    background-color: #c2c2c265;
+}
 
 .sliders {
     padding : 0px 5px;

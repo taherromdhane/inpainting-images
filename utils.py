@@ -33,6 +33,19 @@ def parseContents(contents, filename):
         ),
     ])
 
+def parseContentsDir(source, filename):
+    return html.Div([
+        #html.H5(filename),
+        html.Img(
+            src = source,
+            style = {
+                'width' : '100%',
+                'height' : 'auto'
+            },
+            className = 'preview-image'
+        ),
+    ])
+
 
 # Utility function to get rectangular mask from dash canvas
 def getMask(image_width, image_height, left, top, width, height) :

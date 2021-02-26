@@ -1,12 +1,11 @@
 import flask
 import dash
 from dash.exceptions import PreventUpdate
-from dash.dependencies import Input, Output, State
+from dash.dependencies import Input, Output, State, MATCH, ALL
 import dash_html_components as html
-from dash_canvas import DashCanvas
-from dash_canvas.utils import parse_jsonstring
 import dash_core_components as dcc
 import dash_bootstrap_components as dbc
+
 
 from PIL import Image
 import json
@@ -17,6 +16,9 @@ import matplotlib.cm as cm
 import numpy as np
 import uuid 
 import time
+import shutil
+from datetime import datetime
+
 
 from gevent.pywsgi import WSGIServer
 
@@ -25,17 +27,20 @@ from inpaint import Inpainter
 from layout import *
 
 PREVIEW_HEIGHT = '500px'
+TEST_DIR = 'test_images'
+CANVAS_WIDTH = 500
+CANVAS_HEIGHT = 800
 
 # Initialize app
 server = flask.Flask(__name__) # define flask app.server
 app = dash.Dash(__name__, title='Inpainter', eager_loading=True, server=server)
 
-Initialize Redis Queue
-from rq import Queue
-from rq.job import Job
-from worker import conn
+# Initialize Redis Queue
+# from rq import Queue
+# from rq.job import Job
+# from worker import conn
 
-q = Queue(connection=conn)
+# q = Queue(connection=conn)
 
 # Modify app layout to include bootstrap and custom css
 app.index_string = '''
@@ -64,7 +69,7 @@ app.index_string = '''
 
 # Define the app and main layouts
 main_layout =   html.Div([
-                    upload_layout
+                    getUploadLayout(app.get_asset_url(TEST_DIR))
                 ],
                 id = 'main-div',
                 className = 'main')
@@ -91,6 +96,31 @@ def toggle_navbar_collapse(n, is_open):
     return is_open
 
 # Upload callbacks
+## Sample images selector callback
+@app.callback(
+    Output('sample-image-chosen', 'children'),
+    Input({'type': 'sample-img', 'source': ALL}, 'n_clicks'),
+    prevent_initial_call=True
+)
+def set_chosen_img(n_clicks) :
+    print(dash.callback_context.triggered, file = sys.stderr)
+    change_id = dash.callback_context.triggered[0]['prop_id'].split('.')[:-1]
+    json_source = ".".join(dash.callback_context.triggered[0]['prop_id'].split('.')[:-1])
+    if change_id:
+        return [json.loads(json_source)["source"], time.time()]
+    else :
+        return ["", time.time()]
+
+## Upload time callback
+@app.callback(
+    Output('upload-time-div', 'children'),
+    Input('upload-image', 'contents'),
+    prevent_initial_call=True
+)
+def set_upload_time(content) :
+    return time.time()
+
+## Upload logic callback
 @app.callback(
     [
         Output('upload-preview', 'children'), 
@@ -102,38 +132,67 @@ def toggle_navbar_collapse(n, is_open):
     [
         Input('inpaint-button', 'n_clicks'),
         Input('upload-image', 'contents'),
-        Input('change-upload', 'n_clicks')
+        # Input('change-upload', 'n_clicks'),
+        Input('sample-image-chosen', 'children'),
+        Input('upload-time-div', 'children')
     ], 
     [
-        State('upload-image', 'filename'), 
-        State('upload-image', 'last_modified')
-    ]
+        State('upload-image', 'filename')
+    ],
+    prevent_initial_call=True
 )
-def update_output(inpaint_clicks, image_content, change_clicks, name, date):
+def update_output(inpaint_clicks, image_content, sample_img_data, date_upload, name):
+# def update_output(inpaint_clicks, image_content, change_clicks, n_clicks, name, date, source):
 
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
+    print(changed_id)
+
+    print(sample_img_data)
+    if sample_img_data :
+        source, date_sample = sample_img_data[0], sample_img_data[1]
+    else :
+        source, date_sample = None, None
 
     if 'inpaint-button' not in changed_id :
-        if image_content is None :
-            raise PreventUpdate
-            
-        else :
+        if 'upload-image.contents' in changed_id :
+            print(date_upload)
             return parseContents(image_content, name), {'height': '100px'}, dash.no_update, 'Change Image', dash.no_update
+            
+        elif 'sample-image-chosen.children' in changed_id :
+            print(source)
+            return parseContentsDir(app.get_asset_url(TEST_DIR + '/' + source), name), {'height': '100px'}, dash.no_update, 'Change Image', dash.no_update
+        
+        else :
+            raise PreventUpdate
 
     else :
-        if image_content is None:
-            raise PreventUpdate
+        if image_content is not None or source is not None:
+            print(date_upload, date_sample)
+            if date_upload is not None and (date_sample is None or date_upload > date_sample) :
+                print(name)
+
+                image_ID = str(uuid.uuid1())
+                image_filename = 'source/' + image_ID + '.png'
+                saveImage(image_content, app.get_asset_url(image_filename))
+                
+                inpaint_layout = getInpaintLayout(image_content, app.get_asset_url(image_filename), CANVAS_WIDTH, CANVAS_HEIGHT)
+
+                return dash.no_update, dash.no_update, inpaint_layout, dash.no_update, {'image_ID': image_ID}
+
+            else :
+                print(source)
+
+                image_ID = str(uuid.uuid1())
+                image_filename = 'source/' + image_ID + '.png'
+
+                shutil.copy(app.get_asset_url(TEST_DIR)[1:] + "/" + source, app.get_asset_url(image_filename)[1:])
+
+                inpaint_layout = getInpaintLayout(None, app.get_asset_url(image_filename), CANVAS_WIDTH, CANVAS_HEIGHT)
+
+                return dash.no_update, dash.no_update, inpaint_layout, dash.no_update, {'image_ID': image_ID}
 
         else :
-            print(name)
-
-            image_ID = str(uuid.uuid1())
-            image_filename = 'source/' + image_ID + '.png'
-            saveImage(image_content, app.get_asset_url(image_filename))
-            
-            inpaint_layout = getInpaintLayout(image_content, app.get_asset_url(image_filename))
-
-            return dash.no_update, dash.no_update, inpaint_layout, dash.no_update, {'image_ID': image_ID}
+            raise PreventUpdate
     
 # Callbacks for inpainting parameters 
 @app.callback(
@@ -235,30 +294,30 @@ def inpaint_image(string, ts, mask_contents, patch_size, local_radius, data_sign
     with open(os.getcwd() + app.get_asset_url(progress_filename), 'w') as fp :
         fp.write("0")
 
-    predict_job = q.enqueue(
-                        inpaintingLogic, 
-                        image, 
-                        mask, 
-                        patch_size, 
-                        local_radius, 
-                        data_significance,
-                        threshold, 
-                        live_preview, 
-                        app.get_asset_url(inpainted_filename), 
-                        app.get_asset_url(progress_filename)
-                    )
+    # predict_job = q.enqueue(
+    #                     inpaintingLogic, 
+    #                     image, 
+    #                     mask, 
+    #                     patch_size, 
+    #                     local_radius, 
+    #                     data_significance,
+    #                     threshold, 
+    #                     live_preview, 
+    #                     app.get_asset_url(inpainted_filename), 
+    #                     app.get_asset_url(progress_filename)
+    #                 )
     
-    # inpaintingLogic(
-    #     image,
-    #     mask,
-    #     patch_size,
-    #     local_radius,
-    #     data_significance,
-    #     threshold,
-    #     live_preview,
-    #     app.get_asset_url(inpainted_filename),
-    #     app.get_asset_url(progress_filename)
-    # )
+    inpaintingLogic(
+        image,
+        mask,
+        patch_size,
+        local_radius,
+        data_significance,
+        threshold,
+        live_preview,
+        app.get_asset_url(inpainted_filename),
+        app.get_asset_url(progress_filename)
+    )
 
     return [
                 html.H3('Result'),
