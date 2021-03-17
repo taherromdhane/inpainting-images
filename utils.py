@@ -95,31 +95,31 @@ def maskFromData(string, data, mask_filepath, image_width, image_height, canvas_
 
 from inpaint.Inpainter import Inpainter
 
-def inpaintingOneIterationLogic(
-        image, 
-        mask, 
-        patch_size, 
-        local_radius, 
-        data_significance, 
-        threshold, 
-        live_update, 
-        inpainted_filepath, 
-        mask_filepath, 
-        progress_filepath
-    ) :
+# def inpaintingOneIterationLogic(
+#         image, 
+#         mask, 
+#         patch_size, 
+#         local_radius, 
+#         data_significance, 
+#         threshold, 
+#         live_update, 
+#         inpainted_filepath, 
+#         mask_filepath, 
+#         progress_filepath
+#     ) :
 
-    inpainter = Inpainter(patch_size, local_radius = local_radius, data_significance = data_significance, threshold = threshold)
+#     inpainter = Inpainter(patch_size, local_radius = local_radius, data_significance = data_significance, threshold = threshold)
 
-    inpainted, new_mask, progress = inpainter.inpaintOneIteration(image, mask)
+#     inpainted, new_mask, progress = inpainter.inpaintOneIteration(image, mask)
 
-    # Update progress
-    with open(progress_filepath, 'w') as fp :
-        fp.write(str(progress))
+#     # Update progress
+#     with open(progress_filepath, 'w') as fp :
+#         fp.write(str(progress))
 
-    if live_update :
-        # Update image
-        plt.imsave(os.getcwd() + inpainted_filepath, inpainted)
-        plt.imsave(os.getcwd() + mask_filepath, new_mask)
+#     if live_update :
+#         # Update image
+#         plt.imsave(os.getcwd() + inpainted_filepath, inpainted)
+#         plt.imsave(os.getcwd() + mask_filepath, new_mask)
 
 def inpaintingLogic(
         image, 
@@ -138,20 +138,21 @@ def inpaintingLogic(
     start_time = time.time()
     seconds_passed = 0
     inpainted = None
-    for inpainted, progress, mask in inpainter.inpaintWithSteps(image, mask) :
+    # for inpainted, mask, progress in inpainter.inpaintWithSteps(image, mask) :
 
-        # Update progress
-        with open(os.getcwd() + progress_filepath, 'w') as fp :
-            fp.write(str(progress))
+    #     # Update progress
+    #     # with open(os.getcwd() + progress_filepath, 'w') as fp :
+    #     #     fp.write(str(progress))
 
-        if live_update :
-            # Update image every 1s
-            elapsed = int(time.time() - start_time)
+    #     if live_update :
+    #         # Update image every 1s
+    #         elapsed = int(time.time() - start_time)
 
-            if elapsed > seconds_passed :
-                inpainted[mask == 0] = 0
-                plt.imsave(os.getcwd() + inpainted_filepath, inpainted)
-                seconds_passed = elapsed
-                # print("elapsed : ", elapsed)
+    #         if elapsed > seconds_passed :
+    #             inpainted[mask == 0] = 0
+    #             # plt.imsave(os.getcwd() + inpainted_filepath, inpainted)
+    #             seconds_passed = elapsed
+    #             # print("elapsed : ", elapsed)
 
+    inpainted = inpainter.inpaint(image, mask)
     plt.imsave(os.getcwd() + inpainted_filepath, inpainted)

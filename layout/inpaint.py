@@ -140,6 +140,7 @@ def getInpaintLayout(image_content, image_filename, CANVAS_WIDTH, CANVAS_HEIGHT)
                                     value = []
                                     ),
                                 html.Div([
+                                    html.Div(id='inpaint-alert-div'),
                                     dcc.Upload(
                                         id = 'upload-mask',
                                         children = html.Div([

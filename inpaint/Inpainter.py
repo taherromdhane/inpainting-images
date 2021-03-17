@@ -2,16 +2,17 @@ import numpy as np
 from scipy.ndimage.filters import convolve
 from skimage.color import rgb2gray
 import math
+import time
 
 class Inpainter :
-
-    def _normalize_image(self) :
+    
+    def normalize(self) :
         # Utility method to normalize the image before running
         # the inpainting algorithm
 
-        return self.image/np.max(self.image)
+        self.image = self.image/np.max(self.image)
 
-    def _getPatch(self, array, center) :
+    def getPatch(self, array, center) :
         # Utility method to get patch of image or mask or whatever
 
         i, j = center
@@ -27,10 +28,10 @@ class Inpainter :
 
         except IndexError :
             print("One of the indices is out of range")
-        
 
     # Methods for getting border pixels
-    def _isBorderPixel(self, n, m) :
+
+    def isBorderPixel(self, n, m) :
         # Utility method that takes a pixel position (n, m) and a mask as input and returns
         # whether the pixel in that position is a border pixel or not
         
@@ -49,7 +50,7 @@ class Inpainter :
                     
         return False
 
-    def _getBorderPx(self) :
+    def getBorderPx(self) :
         # Utility method to get all the border pixels in the image
         # excluding of course those who have a patch that partially goes 
         # over the border
@@ -63,23 +64,22 @@ class Inpainter :
         
         for i in range(lower_i, upper_i + 1) :
             for j in range(lower_j, upper_j + 1) :
-                if self._isBorderPixel(i, j) :
+                if self.isBorderPixel(i, j) :
                     self.border_pxls.add((i, j))
-
 
     # Methods to calculate the maximum priority
 
     ## Calculate the patch confidence
-    def _patchConfidence(self, center) :
+
+    def patchConfidence(self, center) :
         # Utility method to calculate the confidence of a chosen patch
-
-        i, j = center
-        return np.sum(self._getPatch(self.confidence, center)) / self.patch_size**2
-    
+        
+        return np.sum(self.getPatch(self.confidence, center)) / self.patch_size**2
+        
     ## Calculate the patch data for the whole mask
-    def _calcNormalMask(self) :
+    def calcNormalMatrix(self):
         # Utility method to calculate the normal vector to each pixel in the mask
-
+        
         x_kernel = np.array([[.25, 0, -.25], [.5, 0, -.5], [.25, 0, -.25]])
         y_kernel = np.array([[.25, .5, .25], [0, 0, 0], [-.25, -.5, -.25]])
         
@@ -87,46 +87,38 @@ class Inpainter :
         y_normal = convolve(self.mask.astype(float), y_kernel)
         
         normal = np.dstack((x_normal, y_normal))
-        
+
         norm = np.sqrt(normal[:, :, 0]**2 + normal[:, :, 1]**2)
         norm[norm == 0] = 1
 
         unit_normal = -normal / np.expand_dims(norm, axis=2)
-        return unit_normal
+        self.normal_mask = unit_normal
         
-    def _calcGradientMask(self):
-        # Utility method to calculate the gradient vector to each pixel in the mask
-        
-        grey_image = rgb2gray(self.image)
-        grey_image[self.mask == 0] = None
-        
-        gradient = np.nan_to_num(np.array(np.gradient(grey_image)))
-        gradient_val = np.sqrt(gradient[0]**2 + gradient[1]**2)
-
-        return gradient, gradient_val
-        
-    def _prepareData(self) :
-
-        self.normal_mask = self._calcNormalMask()
-        self.gradient, self.gradient_val = self._calcGradientMask()
-
-    ## Methods to get the normal and gradient vectors to a patch
-    def _getNormalPatch(self, center):
+    def getNormalPatch(self, center):
         # Utility method to calculate the normal vector to a chosen patch
 
         i, j = center
         return self.normal_mask[i, j]
 
-    def _getGradientPatch(self, center) :
+    ## Methods to get the normal and gradient vectors to a patch
+    def calcGradientMask(self):
+        # Utility method to calculate the gradient vector to each pixel in the mask
+        
+        grey_image = rgb2gray(self.image)
+        grey_image[self.mask == 0] = None
+
+        self.gradient = np.nan_to_num(np.array(np.gradient(grey_image)))
+        self.gradient_val = np.sqrt(self.gradient[0]**2 + self.gradient[1]**2)
+
+    def getGradientPatch(self, center) :
         # Utility method to get the maximum norm of a gradient vector 
         # to the pixels of a chosen patch
         
         max_gradient = np.zeros([2])
-        i, j = center
         
-        patch_y_gradient = self._getPatch(self.gradient[0], center)
-        patch_x_gradient = self._getPatch(self.gradient[1], center)
-        patch_gradient_val = self._getPatch(self.gradient_val, center)
+        patch_y_gradient = self.getPatch(self.gradient[0], center)
+        patch_x_gradient = self.getPatch(self.gradient[1], center)
+        patch_gradient_val = self.getPatch(self.gradient_val, center)
 
         patch_max_pos = np.unravel_index(
             patch_gradient_val.argmax(),
@@ -137,36 +129,40 @@ class Inpainter :
         max_gradient[1] = patch_x_gradient[patch_max_pos]
 
         return max_gradient
+        
+    def prepareDataUtils(self) :
+        
+        self.calcNormalMatrix()
+        self.calcGradientMask()
     
-    def _patchData(self, center) :
+    def patchData(self, center) :
+        # Method that calculates the data term for a given patch
         
-        i, j = center
-
-        normal_vector = self._getNormalPatch(center)
-        max_gradient_vector = self._getGradientPatch(center)
+        normal_vector = self.getNormalPatch(center)
+        max_gradient = self.getGradientPatch(center)
         
-        data = np.abs(np.dot(normal_vector, max_gradient_vector.T)) / self.alpha
+        data = np.abs(np.dot(normal_vector, max_gradient.T)) / self.alpha
         
         return data
     
+
     ## Actually calculate the maximum priority 
-    def _getMaxPriority(self) :
+    def getMaxPriority(self) :
         
         Pp, Cp = 0, 0
         max_pixel = (0, 0)
-        
-        self._prepareData()
+        # print("border", len(self.border_pxls))
+        self.prepareDataUtils()
         
         for pixel in self.border_pxls :
             
             n, m = pixel
             
-            # Check for going over border already performed in _getBorderPx
             # if n - offset < 0 or n + offset + 1 > image.shape[0] or m - offset < 0 or m + offset + 1 > image.shape[1] :
             #     continue
             
-            current_Cp = self._patchConfidence(pixel)
-            current_Dp = self._patchData(pixel)
+            current_Cp = self.patchConfidence(pixel)
+            current_Dp = self.patchData(pixel)
             # current_Dp = 1
             
             current_Pp = current_Cp * (current_Dp ** self.data_significance) # Pp to change into matrix
@@ -176,13 +172,22 @@ class Inpainter :
                 Cp = current_Cp
                 max_pixel = pixel
 
+        # print("max_pixel", max_pixel)
+        # print("Pp, Cp", Pp, Cp)
+
         return max_pixel, Cp
 
 
     # Get the optimal patch to use for the filling
 
-    def _getSearchBoundaries(self, target_pixel) :
+    def distance(self, target_patch, candidate_patch, mask_patch) :
+
+        mask_patch = np.expand_dims(mask_patch, axis=2)
         
+        return np.sum(((target_patch - candidate_patch) * mask_patch) ** 2) / np.sum(mask_patch)
+
+    def getSearchBoundaries(self, target_pixel) :
+            
         n, m = target_pixel
 
         if self.local_radius :
@@ -198,41 +203,39 @@ class Inpainter :
         
         return upper_i, lower_i, upper_j, lower_j
 
-    def _patchDistance(self, target_patch, candidate_patch, mask_patch) :
-
-        mask_patch = np.expand_dims(mask_patch, axis=2)
+    def getOptimalPatch(self, target_pixel) :
         
-        return np.sum(((target_patch - candidate_patch) * mask_patch) ** 2) / np.sum(mask_patch)
-    
-    def _getOptimalPatch(self, target_pixel) :
-        
-        upper_i, lower_i, upper_j, lower_j = self._getSearchBoundaries(target_pixel)
-
         n, m = target_pixel
+
+        upper_i, lower_i, upper_j, lower_j = self.getSearchBoundaries(target_pixel)
         
-        optimal_patch = (0, 0)
-        optimal_distance = 1e9
-        target_patch = self._getPatch(self.image, target_pixel)           
-        mask_patch = self._getPatch(self.mask, target_pixel)   
+        
+        target_patch = self.getPatch(self.image, target_pixel)         
+        mask_patch = self.getPatch(self.mask, target_pixel)
         
         threshold_targets = []
 
         for i in range(lower_i, upper_i + 1) :
             for j in range(lower_j, upper_j + 1) :
                 # if candidate patch is in part in mask then skip            
-                if np.any(self._getPatch(self.mask, (i, j)) == 0) :
+                if np.any(self.getPatch(self.mask, (i, j)) == 0) :
                     continue
                 
+                # compute the distance between the center pixels and only add to the array
+                # if the distance is less than the center similarity threshold 
                 d_center = np.sqrt(np.sum((self.image[n, m, :] - self.image[i, j, :]) ** 2))
                 if self.threshold == None or d_center < self.threshold :
                     threshold_targets.append((i, j, d_center))
-
+                    
         threshold_targets.sort(key = lambda x : x[2])
-        # threshold_targets = threshold_targets[:int(math.sqrt(len(threshold_targets)))]
+        threshold_targets = threshold_targets[:int(math.sqrt(len(threshold_targets)))]
+
+        optimal_patch = (0, 0)
+        optimal_distance = 1e9
 
         for i, j, d_center in threshold_targets :
-            candidate_patch = self._getPatch(self.image, (i, j))
-            current_distance = self._patchDistance(target_patch, candidate_patch, mask_patch)
+            candidate_patch = self.getPatch(self.image, (i, j))
+            current_distance = self.distance(target_patch, candidate_patch, mask_patch)
             
             if current_distance < optimal_distance :
                 optimal_patch = (i, j)
@@ -240,34 +243,72 @@ class Inpainter :
         
         return optimal_patch
 
-    def _updateConfidence(self, Cp, target_pixel) :   
+    def updateConfidence(self, Cp, target_pixel) :   
         
         i, j = target_pixel
 
         self.confidence[i - self.offset : i + self.offset + 1, j - self.offset : j + self.offset + 1] = \
-                self._getPatch(self.confidence, target_pixel)+ (1 - self._getPatch(self.mask, target_pixel)) * Cp
+            self.getPatch(self.confidence, target_pixel) + (1 - self.getPatch(self.mask, target_pixel)) * Cp
 
-
-    def _fillPatch(self, target_pixel, opt_patch) :
+    def fillPatch(self, target_pixel, opt_patch) :
         
         n, m = target_pixel
         i, j = opt_patch
-        offset = self.offset
         
-        un, dn, lm, rm = n - offset, n + offset + 1, m - offset, m + offset + 1
-        ui, di, lj, rj = i - offset, i + offset + 1, j - offset, j + offset + 1
+        un, dn, lm, rm = n - self.offset, n + self.offset + 1, m - self.offset, m + self.offset + 1
+        ui, di, lj, rj = i - self.offset, i + self.offset + 1, j - self.offset, j + self.offset + 1
         
-        mask_patch = self._getPatch(self.mask, target_pixel)
+        mask_patch = self.mask[un: dn, lm: rm]
         mask_patch = np.expand_dims(mask_patch, axis=2)
         
-        self.image[un: dn, lm: rm, :] = self._getPatch(self.image, target_pixel) * mask_patch + \
-                                        self._getPatch(self.image, opt_patch) * (1 - mask_patch)
+        self.image[un: dn, lm: rm, :] = self.image[un: dn, lm: rm, :] * mask_patch + self.image[ui: di, lj: rj, :] * (1 - mask_patch)
         
         self.mask[un: dn, lm: rm] = 1
 
+    def _updateBorderPixel(self, i, j) :
 
+        if self.isBorderPixel(i, j) :
+            self.border_pxls.add((i, j))
+        
+        else :
+            self.border_pxls.discard((i, j))
+
+    def _updateBorder(self, target_pixel) :
+
+        n, m = target_pixel
+
+        upper_i = min(self.mask.shape[0] - self.offset, n + self.offset + 1)
+        lower_i = max(self.offset, n - self.offset)
+        upper_j = min(self.mask.shape[1] - self.offset, m + self.offset + 1)
+        lower_j = max(self.offset, m - self.offset)
+        
+        for i in range(lower_i - 1, upper_i - 1) :
+            for j in range(lower_j - 1, upper_j - 1) :
+                self.border_pxls.discard((i, j))
+
+        for i in range(max(self.offset, lower_i - 1), lower_i + 1) :
+            for j in range(max(lower_j - 1, self.offset), min(upper_j + 1, self.mask.shape[1] - self.offset)) :
+                self._updateBorderPixel(i, j)
+
+        for i in range(upper_i - 1, min(upper_i + 1, self.mask.shape[0] - self.offset)) :
+            for j in range(max(lower_j - 1, self.offset), min(upper_j + 1, self.mask.shape[1] - self.offset)) :
+                self._updateBorderPixel(i, j)
+
+        for j in range(max(self.offset, lower_j - 1), lower_j + 1) :
+            for i in range(max(lower_i - 1, self.offset), min(upper_i + 1, self.mask.shape[0] - self.offset)) :
+                self._updateBorderPixel(i, j)
+
+        for j in range(upper_j - 1, min(upper_j + 1, self.mask.shape[1] - self.offset)) :
+            for i in range(max(lower_i - 1, self.offset), min(upper_i + 1, self.mask.shape[0] - self.offset)) :
+                self._updateBorderPixel(i, j)
+
+        
+
+
+
+    # __init__ method 
     def __init__(self, patch_size, local_radius, data_significance = 0, alpha=1, threshold = None) :
-
+    
         # assert patch_size is an odd number
         if patch_size%2 == 0 :
             raise ValueError("Patch size must be an odd number for this algorithm !")
@@ -280,92 +321,82 @@ class Inpainter :
         self.threshold = threshold
         self.start_zeros = None
 
+    # inpainting methods
     def _inpaintingIteration(self) :
 
-        self._getBorderPx()
+        """
+            Utility method for an executing an inpainting iteration, updating
+            the variable values accordingly, which is used in the later methods
+            to execute the inpainting algorithm
+        """
 
-        self.progress = 100
+        progress = 100
 
-        if len(self.border_pxls) == 0 :
-            return
-            
-        target_pixel, Cp = self._getMaxPriority()
+        target_pixel, Cp = self.getMaxPriority()
 
-        opt_patch = self._getOptimalPatch(target_pixel)
+        opt_patch = self.getOptimalPatch(target_pixel) # Most time-consuming function
 
-        self._updateConfidence(Cp, target_pixel)
+        self.updateConfidence(Cp, target_pixel)
 
-        self._fillPatch(target_pixel, opt_patch)
+        self.fillPatch(target_pixel, opt_patch)
 
+        start = time.time()
         self.progress = (1 - np.sum((1 - self.mask)) / self.start_zeros) * 100
 
+        self._updateBorder(target_pixel)
+
+    
     def inpaint(self, image, mask) :
-        
+        """
+            Main method to handle the inpainting
+            Parameters:
+                - image: the image to inpaint
+                - mask: the mask of the image to inpaint, denoting the masked area by 0's
+            and the rest of the image by 1's
+        """
         self.image = image
         self.mask = mask
-        if mask.shape[:2] != image.shape[:2] :
-            raise ValueError("Mask and image must be of the same shape")
+        self.confidence = np.copy(mask)
+        self.normalize()
         
-        self.confidence = np.copy(self.mask)
-        self._normalize_image()
-        
-        self.start_zeros = np.sum((1 - self.mask))
+        self.start_zeros = np.sum((1 - mask))
+        self.getBorderPx()
 
-        while True :
-
+        while len(self.border_pxls) != 0 :
+            start = time.time()
+            
             self._inpaintingIteration()
+            print(time.time() - start)
+            
             print("Almost there ! ===> {:.1f}/{}".format(self.progress, 100), sep='\n')
-
-            if self.progress >= 100 :
-                break
             
         return self.image
 
-    def inpaintOneIteration(self, image, mask) :
-        
-        self.image = image
-        self.mask = mask
-        if mask.shape[:2] != image.shape[:2] :
-            raise ValueError("Mask and image must be of the same shape")
-        
-        self.confidence = np.copy(self.mask)
-        self._normalize_image()
-        
-        # change to consider the case where image changes
-        if not self.start_zeros :
-            self.start_zeros = np.sum((1 - self.mask))
-        print("start_zeros : ", self.start_zeros)
-        self._inpaintingIteration()
-
-        print("Almost there ! ===> {:.1f}/{}".format(self.progress, 100), sep='\n')
-
-        if self.progress >= 100 :
-            self.start_zeros = None
-            
-        return self.image, self.mask, self.progress
-
     def inpaintWithSteps(self, image, mask) :
 
+        """
+            Main method to handle the inpainting but returning the steps at each iteration
+            Parameters:
+                - image: the image to inpaint
+                - mask: the mask of the image to inpaint, denoting the masked area by 0's
+            and the rest of the image by 1's
+        """
+
         self.image = image
         self.mask = mask
-        if mask.shape[:2] != image.shape[:2] :
-            raise ValueError("Mask and image must be of the same shape")
-
-        
         self.confidence = np.copy(self.mask)
-        self._normalize_image()
+        self.normalize()
         
         self.start_zeros = np.sum((1 - self.mask))
+        self.getBorderPx()
 
-        while True :
+        while len(self.border_pxls) != 0 :
+            
+            start = time.time()
 
             self._inpaintingIteration()
-
+            print(time.time() - start)
+            
             print("Almost there ! ===> {:.1f}/{}".format(self.progress, 100), sep='\n')
-
-            yield self.image, self.progress, self.mask
-
-            if self.progress >= 100 :
-                break
             
-            
+            yield self.image, self.mask, self.progress

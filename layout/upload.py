@@ -18,7 +18,8 @@ def getUploadLayout(samples_folder) :
                 className = "sample-img-card",
                 id = {
                     'type' : 'sample-img',
-                    'source' : source.split("\\")[-1]
+                    # 'source' : source.split("\\")[-1]
+                    'source' : source
                 }
             ),
             color = "light",
@@ -153,18 +154,23 @@ def getUploadLayout(samples_folder) :
                         samples_layout,
                         html.Div(
                             html.Div(
-                                dbc.Button(
-                                    'Inpaint Image', 
-                                    color = 'primary',
-                                    size = 'lg', 
-                                    className = 'mr-1',
-                                    id = 'inpaint-button', 
-                                    block = True,
-                                    style = {
-                                        'margin-top' : '30px',
-                                        'font-weight': 'bold',
-                                        'padding': '10px'
-                                    }),
+                                [
+                                    html.Div(id='upload-alert-div',
+                                        style = {
+                                            'margin-top' : '30px'}),
+                                    dbc.Button(
+                                        'Inpaint Image', 
+                                        color = 'primary',
+                                        size = 'lg', 
+                                        className = 'mr-1',
+                                        id = 'inpaint-button', 
+                                        block = True,
+                                        style = {
+                                            'margin-top' : '30px',
+                                            'font-weight': 'bold',
+                                            'padding': '10px'
+                                        })
+                                ],
                             className = "col-md-10 ml-auto mr-auto"),
                         className = "row"),
                     ])
