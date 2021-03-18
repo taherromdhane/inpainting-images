@@ -8,10 +8,10 @@ the inpainting algorithm
 <details>
 <summary>Click to see code</summary>
     
-~~~
+{% highlight python %}
 def _normalize(self) :
     self.image = self.image/np.max(self.image)
-~~~
+{% endhighlight %}
 
 </details>
 <br>
