@@ -9,13 +9,22 @@ navbar_layout = dbc.NavbarSimple(
                         dbc.NavItem(
                             dbc.NavLink(
                                 [html.I(className="fa fa-github"), "View Source Code"], 
-                                href="https://github.com/taherromdhane/inpainting-images"
+                                href="https://github.com/taherromdhane/inpainting-images",
+                                target="_blank"
                                 )
                         ),
                         dbc.NavItem(
                             dbc.NavLink(
                                 [html.I(className="fa fa-file"), "View Report"], 
-                                href="https://github.com/taherromdhane/inpainting-images"
+                                href="https://github.com/taherromdhane/inpainting-images/project_report.pdf",
+                                target="_blank"
+                                )
+                        ),
+                        dbc.NavItem(
+                            dbc.NavLink(
+                                [html.I(className="fa fa-file"), "View Documentation"], 
+                                href="https://taherromdhane.github.io/inpainting-images/",
+                                target="_blank"
                                 )
                         ),
                         dbc.DropdownMenu(

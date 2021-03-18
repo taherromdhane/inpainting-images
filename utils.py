@@ -10,7 +10,6 @@ import matplotlib.cm as cm
 from PIL import Image
 import time
 
-
 def saveImage(contents, filepath):
     """
         Utility function to save contents of an image (encoded in base 64)

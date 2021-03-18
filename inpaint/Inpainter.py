@@ -244,7 +244,13 @@ class Inpainter :
         return np.sum(((target_patch - candidate_patch) * mask_patch) ** 2) / np.sum(mask_patch)
 
     def _getSearchBoundaries(self, target_pixel) :
-            
+        """
+            Utility method to get the limits for the optimal patch search, according
+            to the local_radius parameter 
+            Parameters :
+                target_pixel: tuple of the coordinates of the target pixel, center of the patch
+                to fill
+        """
         n, m = target_pixel
 
         if self.local_radius :
