@@ -6,18 +6,12 @@ import dash_html_components as html
 import dash_core_components as dcc
 import dash_bootstrap_components as dbc
 
-
-from PIL import Image
-import json
 import os
 import sys
 import matplotlib.pyplot as plt
-import matplotlib.cm as cm
-import numpy as np
 import uuid 
 import time
 import shutil
-from datetime import datetime
 
 
 from gevent.pywsgi import WSGIServer
@@ -91,6 +85,12 @@ app.layout = html.Div([
     [State("navbar-collapse", "is_open")],
 )
 def toggle_navbar_collapse(n, is_open):
+    """
+        Callback method to toggle the navbar
+        Parameters :
+            n: number of clicks on the navbar toggler
+            is_open: state of the navbar, whether open or closed
+    """
     if n:
         return not is_open
     return is_open
@@ -103,6 +103,13 @@ def toggle_navbar_collapse(n, is_open):
     prevent_initial_call=True
 )
 def set_chosen_img(n_clicks) :
+    """
+        Callback method that stores the selected sample image in the 
+        'sample-image-chosen' element for use later in preview and upload
+        Parameters :
+            n_clicks: clicks on any of the 'sample-img' elements (note the ALL)
+    """
+
     change_id = dash.callback_context.triggered[0]['prop_id'].split('.')[:-1]
     json_source = ".".join(dash.callback_context.triggered[0]['prop_id'].split('.')[:-1])
     if change_id:
@@ -116,7 +123,12 @@ def set_chosen_img(n_clicks) :
     Input('upload-image', 'contents'),
     prevent_initial_call=True
 )
-def set_upload_time(content) :
+def set_upload_time(contents) :
+    """
+        Callback method that stores the time of the last upload
+        Parameters :
+            content: contents of the upload element
+    """
     return time.time()
 
 ## Upload logic callback
@@ -141,7 +153,19 @@ def set_upload_time(content) :
     prevent_initial_call=True
 )
 def update_output(inpaint_clicks, image_content, sample_img_data, date_upload, name):
+    """
+        Callback method that handles the update of the preview, whether from the 
+        sample images or the upload element, and also handle the inpaint button
+        logic
+        Parameters :
+            inpaint_clicks: clicks on the inpaint button
+            image_content: contents of the upload element
+            sample_img_data: last selected sample image and its source path
+            date_upload: the date of the last image upload by user
+            name: name of the uploaded image file
+    """
 
+    # Get the element(s) that fired the callback 
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
 
     # Initialize variables depending on whether a sample image was chosen or not
@@ -251,11 +275,25 @@ def update_output(value):
     prevent_initial_call=True)
 def inpaint_image(string, ts, mask_contents, patch_size, local_radius, data_significance, \
                                         threshold, rect_fill, use_data, use_threshold, show_live_preview, session_data):
+    """
+        Callback method that handles the update of the preview, whether from the 
+        sample images or the upload element, and also handle the inpaint button
+        logic
+        Parameters :
+            inpaint_clicks: clicks on the inpaint button
+            image_content: contents of the upload element
+            sample_img_data: last selected sample image and its source path
+            date_upload: the date of the last image upload by user
+            name: name of the uploaded image file
+    """
+
+    # Get data that holds canvas objects, including masks on the image
     if string:
         data = json.loads(string)
     else:
         raise PreventUpdate
 
+    # Load image to run the algorithm on
     image_ID = session_data.get('image_ID', '')
     image_filename = 'source/' + image_ID + '.png'
     image = np.array(Image.open(os.getcwd() + app.get_asset_url(image_filename)))
@@ -263,6 +301,7 @@ def inpaint_image(string, ts, mask_contents, patch_size, local_radius, data_sign
     image_width = image.shape[1]
     image_height = image.shape[0]
     
+    # Parse the mask from Canvas and save it to file
     mask_filename = 'masks/' + image_ID + '.png'
     print(mask_filename)
 
@@ -276,6 +315,7 @@ def inpaint_image(string, ts, mask_contents, patch_size, local_radius, data_sign
     if mask.shape != image.shape[:2] :
         return dbc.Alert("Mask is not the same shape as image!", color="danger", duration=2000), dash.no_update
 
+    # Give default values to variables
     if 'use' not in use_data :
         data_significance = 0
 
@@ -286,31 +326,12 @@ def inpaint_image(string, ts, mask_contents, patch_size, local_radius, data_sign
     if 'show' in show_live_preview :
         live_preview = True
 
-    start_time = time.time()
-
+    # Initialize result image
     inpainted_filename = 'results/' + image_ID + '.png'
-    progress_filename =  'progress/' + image_ID + '.txt'
-
     inpainted = np.copy(image)
     inpainted[mask == 0] = 0
 
-    plt.imsave(os.getcwd() + app.get_asset_url(inpainted_filename), inpainted)
-
-    with open(os.getcwd() + app.get_asset_url(progress_filename), 'w') as fp :
-        fp.write("0")
-    # predict_job = q.enqueue(
-    #                     inpaintingLogic, 
-    #                     image, 
-    #                     mask, 
-    #                     patch_size, 
-    #                     local_radius, 
-    #                     data_significance,
-    #                     threshold, 
-    #                     live_preview, 
-    #                     app.get_asset_url(inpainted_filename), 
-    #                     app.get_asset_url(progress_filename)
-    #                 )
-    
+    # Run the inpainting algorithm    
     start_time = time.time()
 
     inpaintingLogic(
@@ -327,32 +348,13 @@ def inpaint_image(string, ts, mask_contents, patch_size, local_radius, data_sign
 
     print("ran inpainting algorithm in {} : ".format(time.time() - start_time))
 
+    # return the resulting div, with the result image
     return dash.no_update, \
             [
                 html.H3('Result'),
                 html.Hr(style = {'width' : '80%'}),
-                # html.Div(
-                #     [
-                #         dcc.Interval(id="progress-interval", n_intervals=0, interval=100),
-                #         dbc.Progress(
-                #             id = "progress", 
-                #             striped = True, 
-                #             animated = True, 
-                #             value = 0,
-                #             style = {
-                #                 "height": "30px",
-                #                 "margin" : "10px"
-                #             }
-                #         ),
-                #     ],
-                #     id = "progress-interval-div"
-                # ),
                 html.Div(
                     [
-                        # html.Div(
-                        #     dcc.Interval(id="result-interval", n_intervals=0, interval=1000),
-                        #     id = "result-interval-div"
-                        # ),
                         html.Div(
                             html.Img(
                                 # id='result-image', 
@@ -365,78 +367,7 @@ def inpaint_image(string, ts, mask_contents, patch_size, local_radius, data_sign
                 )   
             ] 
 
-# Callback for updating the progress bar
-# @app.callback(
-#     [
-#         Output("progress", "value"), 
-#         Output("progress", "children"),
-#         Output("progress-interval-div", "children")
-#     ],
-#     [
-#         Input("progress-interval", "n_intervals")
-#     ],
-#     State('session', 'data'),
-#     prevent_initial_call=True
-# )
-# def update_progress(n_intervals, session_data):
-
-#     image_ID = session_data.get('image_ID', '')
-
-#     progress_filename =  'progress/' + image_ID + '.txt'
-#     with open(os.getcwd() + app.get_asset_url(progress_filename), 'r') as fp :
-#         progress = int(float(fp.read()))
-
-#     # progress = min(progress % 110, 100)
-#     # only add text after 5% progress to ensure text isn't squashed too much
-#     if progress < 100 :
-#         return  progress, f"{progress} %" if progress >= 5 else "", dash.no_update
-
-#     else :
-#         return  progress, f"{progress} %" if progress >= 5 else "", None
-
-    # print("ran inpainting algorithm in {} : ".format(time.time() - start_time))
-
-# Callback for updating the live preview and showing the result
-# @app.callback(
-#     [ 
-#         Output("result-image-div", "children"),
-#         Output("result-interval-div", "children")
-#     ],
-#     [
-#         Input("result-interval", "n_intervals"),
-#         Input('live-preview', 'value')
-#     ],
-#     State('session', 'data'),
-#     prevent_initial_call=True
-# )
-
-# def update_preview(n_intervals, show_live_preview, session_data) :
-
-#     image_ID = session_data.get('image_ID', '')
-    
-#     # progress_filename =  'progress/' + image_ID + '.txt'
-#     # with open(os.getcwd() + app.get_asset_url(progress_filename), 'r') as fp :
-#     #     progress = int(float(fp.read()))
-
-#     # if progress <= 100 and 'show' not in show_live_preview :
-#     #     raise PreventUpdate
-    
-#     inpainted_filename = 'results/' + image_ID + '.png'
-
-#     # if progress == 100 :
-#     #     return  html.Img(
-#     #                 # id='result-image', 
-#     #                 width = CANVAS_WIDTH,
-#     #                 src = app.get_asset_url(inpainted_filename)
-#     #             ), None
-#     # else :
-#     return  html.Img(
-#                 # id='result-image', 
-#                 width = CANVAS_WIDTH,
-#                 src = app.get_asset_url(inpainted_filename)
-#             ), dash.no_update
-
-
+# Add external css for bootstrap
 app.css.append_css({
     'external_url': [
         'https://codepen.io/chriddyp/pen/bWLwgP.css',
@@ -447,8 +378,10 @@ app.css.append_css({
 app.config['suppress_callback_exceptions'] = True
 
 if __name__ == '__main__':
+    # To run server in local environment
     app.run_server(debug=True, dev_tools_hot_reload = False)
 
+    # To run server when deployed
     # http_server = WSGIServer(('0.0.0.0', int(os.environ.get("PORT", 5000))), server)
     # print(int(os.environ.get("PORT", 5000)), file=sys.stderr)
     # http_server.serve_forever()
