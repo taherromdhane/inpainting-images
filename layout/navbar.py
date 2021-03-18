@@ -4,39 +4,6 @@ import dash_html_components as html
 
 LOGO = "https://images.plot.ly/logo/new-branding/plotly-logomark.png"
 
-# navbar_layout = dbc.Navbar(
-#                     children=[
-#                         html.A(
-#                             # Use row and col to control vertical alignment of logo / brand
-#                             dbc.Row(
-#                                 [
-#                                     dbc.Col(html.Img(src=LOGO, height="30px")),
-#                                     dbc.Col(dbc.NavbarBrand("Inpainter", className="ml-2")),
-#                                 ],
-#                                 align="center",
-#                                 no_gutters=True,
-#                             ),
-#                             # href="https://plot.ly",
-#                         ),
-#                         dbc.NavItem(dbc.NavLink("Page 1", href="#")),
-#                         dbc.DropdownMenu(
-#                             children=[
-#                                 dbc.DropdownMenuItem("More pages", header=True),
-#                                 dbc.DropdownMenuItem("Page 2", href="#"),
-#                                 dbc.DropdownMenuItem("Page 3", href="#"),
-#                             ],
-#                             nav=True,
-#                             in_navbar=True,
-#                             label="More",
-#                         ),
-#                         dbc.NavbarToggler(id="navbar-toggler")
-#                     ],
-#                     className = "navbar fixed-top",
-#                     color="black",
-#                     dark=True,
-#                 )
-
-
 navbar_layout = dbc.NavbarSimple(
                     children=[
                         dbc.NavItem(

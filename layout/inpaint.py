@@ -7,15 +7,91 @@ from dash_canvas.utils import parse_jsonstring
 
 
 def getInpaintLayout(image_content, image_filename, CANVAS_WIDTH, CANVAS_HEIGHT) :
-
-    inpaint_layout = html.Div([
-                        html.H1(
-                            'Draw Mask and Then Run The Inpainter',
-                            style = {
-                                'text-align':'center',
-                                'margin' : '40px 0px'
-                        }),
+    canvas_layout = html.Div([
                         html.Div([
+                            html.H3('Image to be filled'),
+                            html.Hr(style = {'width' : '80%'}),
+                            html.Div(
+                                DashCanvas(
+                                    id='annot-canvas',
+                                    lineWidth=10,
+                                    width=CANVAS_WIDTH,
+                                    height=CANVAS_HEIGHT,
+                                    lineColor='rgba(255, 0, 0, 0.6)',
+                                    #image_content=image_content,
+                                    filename=image_filename,
+                                    tool="rectangle",
+                                    hide_buttons=['line', 'pan', 'select'],
+                                    goButtonTitle="Fill Mask",
+                                    ),
+                                className = 'col-md-10'
+                            ),
+                            dcc.Checklist(
+                                id='fill-rect',
+                                options=[
+                                    {'label': 'Fill Rectangles', 'value': 'fill'},
+                                ],
+                                value=['fill']
+                                ),
+                            dcc.Checklist(
+                                id='use-data-term',
+                                options=[
+                                    {'label': 'Use Data Term', 'value': 'use'},
+                                ],
+                                value=['use']
+                                ),
+                            dcc.Checklist(
+                                id='use-center-threshold',
+                                options=[
+                                    {'label': 'Use Center Similarity Threshold', 'value': 'use'},
+                                ],
+                                value = []
+                                ),
+                            dcc.Checklist(
+                                id='live-preview',
+                                options=[
+                                    {'label': 'Live Preview', 'value': 'show'},
+                                ],
+                                value = []
+                                ),
+                            html.Div([
+                                html.Div(id='inpaint-alert-div'),
+                                dcc.Upload(
+                                    id = 'upload-mask',
+                                    children = html.Div([
+                                        'Or ',
+                                        html.A('Upload a Mask')
+                                    ]),
+                                    style = {
+                                        'width': '80%',
+                                        'height': '60px',
+                                        'lineHeight': '60px',
+                                        'borderWidth': '1px',
+                                        'borderStyle': 'dashed',
+                                        'borderRadius': '5px',
+                                        'textAlign': 'center',
+                                        'margin': '10px',
+                                        'position': 'center'
+                                    },
+                                    accept = '.png, .jpg, .jpeg',
+                                    # don't allow multiple files to be uploaded
+                                    multiple = False,
+                                    className = 'upload-section'
+                                )
+                            ])
+                        ], 
+                        className = 'col-xl-6 canvas-section',
+                        id = 'canvas_div'),
+                        html.Div(
+                            className = 'col-xl-6',
+                            id = 'result-div',
+                            style = {
+                                'marginBottom' : '20px'
+                        }),
+                    ],
+                    className = 'row')
+
+    sliders_layout = html.Div([
                             html.Div([
                                 html.H5(children=['Brush width']),
                                 dcc.Slider(
@@ -91,90 +167,18 @@ def getInpaintLayout(image_content, image_filename, CANVAS_WIDTH, CANVAS_HEIGHT)
                             style = {'text-align' : 'center'})
                         ], 
                         className = "row",
-                        style = {'text-align' : 'center', 'width' : '100%', 'marginTop' : '20px', 'marginBottom' : '20px'}),
-                        html.Div([
-                            html.Div([
-                                html.H3('Image to be filled'),
-                                html.Hr(style = {'width' : '80%'}),
-                                html.Div(
-                                    DashCanvas(
-                                        id='annot-canvas',
-                                        lineWidth=10,
-                                        width=CANVAS_WIDTH,
-                                        height=CANVAS_HEIGHT,
-                                        lineColor='rgba(255, 0, 0, 0.6)',
-                                        #image_content=image_content,
-                                        filename=image_filename,
-                                        tool="rectangle",
-                                        hide_buttons=['line', 'pan', 'select'],
-                                        goButtonTitle="Fill Mask",
-                                        ),
-                                    className = 'col-md-10'
-                                ),
-                                dcc.Checklist(
-                                    id='fill-rect',
-                                    options=[
-                                        {'label': 'Fill Rectangles', 'value': 'fill'},
-                                    ],
-                                    value=['fill']
-                                    ),
-                                dcc.Checklist(
-                                    id='use-data-term',
-                                    options=[
-                                        {'label': 'Use Data Term', 'value': 'use'},
-                                    ],
-                                    value=['use']
-                                    ),
-                                dcc.Checklist(
-                                    id='use-center-threshold',
-                                    options=[
-                                        {'label': 'Use Center Similarity Threshold', 'value': 'use'},
-                                    ],
-                                    value = []
-                                    ),
-                                dcc.Checklist(
-                                    id='live-preview',
-                                    options=[
-                                        {'label': 'Live Preview', 'value': 'show'},
-                                    ],
-                                    value = []
-                                    ),
-                                html.Div([
-                                    html.Div(id='inpaint-alert-div'),
-                                    dcc.Upload(
-                                        id = 'upload-mask',
-                                        children = html.Div([
-                                            'Or ',
-                                            html.A('Upload a Mask')
-                                        ]),
-                                        style = {
-                                            'width': '80%',
-                                            'height': '60px',
-                                            'lineHeight': '60px',
-                                            'borderWidth': '1px',
-                                            'borderStyle': 'dashed',
-                                            'borderRadius': '5px',
-                                            'textAlign': 'center',
-                                            'margin': '10px',
-                                            'position': 'center'
-                                        },
-                                        accept = '.png, .jpg, .jpeg',
-                                        # don't allow multiple files to be uploaded
-                                        multiple = False,
-                                        className = 'upload-section'
-                                    )
-                                ])
-                            ], 
-                            className = 'col-xl-6 canvas-section',
-                            id = 'canvas_div'),
-                            html.Div(
-                                className = 'col-xl-6',
-                                id = 'result-div',
-                                style = {
-                                    'marginBottom' : '20px'
-                            }),
-                        ],
-                        className = 'row')
+                        style = {'text-align' : 'center', 'width' : '100%', 'marginTop' : '20px', 'marginBottom' : '20px'})
+
+    inpaint_layout = html.Div([
+                        html.H1(
+                            'Draw Mask and Then Run The Inpainter',
+                            style = {
+                                'text-align':'center',
+                                'margin' : '40px 0px'
+                        }),
+                        sliders_layout,
+                        canvas_layout
                     ], 
                     className = 'col')
+                    
     return inpaint_layout
