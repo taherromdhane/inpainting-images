@@ -16,7 +16,7 @@ navbar_layout = dbc.NavbarSimple(
                         dbc.NavItem(
                             dbc.NavLink(
                                 [html.I(className="fa fa-file"), "View Report"], 
-                                href="https://github.com/taherromdhane/inpainting-images/project_report.pdf",
+                                href="https://docs.google.com/gview?url=https://github.com/taherromdhane/inpainting-images/raw/master/project_report.pdf",
                                 target="_blank"
                                 )
                         ),
