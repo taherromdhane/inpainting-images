@@ -7,11 +7,9 @@ the inpainting algorithm
 
 <details>
 <summary>Click to see code</summary>
- 
-```python
-def _normalize(self) :
-    self.image = self.image/np.max(self.image)
-```
+
+    def _normalize(self) :
+        self.image = self.image/np.max(self.image)
   
 </details>
 <br>
