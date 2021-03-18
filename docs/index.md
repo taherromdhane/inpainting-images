@@ -14,6 +14,7 @@ def _normalize(self) :
 ```
   
 </details>
+<br>
 
 ### _getPatch(self, array, center)
 
@@ -47,7 +48,7 @@ def _getPatch(self, array, center) :
 ```
   
 </details>
-        
+<br>
 
 ### _isBorderPixel(self, n, m)
 
@@ -80,6 +81,7 @@ def _isBorderPixel(self, n, m) :
 ```
   
 </details>
+<br>
 
 ### _getBorderPx(self)
 
@@ -106,6 +108,7 @@ def _getBorderPx(self) :
 ```
   
 </details>
+<br>
 
 ## Methods to calculate the maximum priority
 
@@ -123,7 +126,8 @@ def _patchConfidence(self, center) :
     return np.sum(self._getPatch(self.confidence, center)) / self.patch_size**2
 ```
   
-</details>       
+</details>   
+<br>    
 
 ## _calcNormalMatrix(self):
 
@@ -152,6 +156,7 @@ def _calcNormalMatrix(self):
 ```
   
 </details>
+<br>
 
 ### _getNormalPatch(self, center):
 Utility method to calculate the normal vector to a chosen patch
@@ -168,6 +173,7 @@ def _getNormalPatch(self, center):
 ```
   
 </details>
+<br>
 
 ## Methods to get the normal and gradient vectors to a patch
 
@@ -187,6 +193,7 @@ def _calcGradientMask(self):
 ```
   
 </details>
+<br>
 
 ### _getGradientPatch(self, center) :
 
@@ -218,6 +225,7 @@ def _getGradientPatch(self, center) :
 ```
   
 </details>
+<br>
 
 ### _prepareDataUtils(self) :
 
@@ -235,6 +243,7 @@ def _prepareDataUtils(self) :
 ```
   
 </details>
+<br>
 
 ### _patchData(self, center) :
 
@@ -257,6 +266,7 @@ def _patchData(self, center) :
 ```
   
 </details>
+<br>
 
 ## Actually calculate the maximum priority 
 
@@ -299,6 +309,7 @@ def _getMaxPriority(self) :
 ```
   
 </details>
+<br>
 
 ## Get the optimal patch to use for the filling
 
@@ -322,6 +333,7 @@ def _distance(self, target_patch, candidate_patch, mask_patch) :
 ```
   
 </details>
+<br>
 
 
 ### _getSearchBoundaries(self, target_pixel) :
@@ -354,6 +366,7 @@ def _getSearchBoundaries(self, target_pixel) :
 ```
   
 </details>
+<br>
 
 ### _getOptimalPatch(self, target_pixel) :
 
@@ -415,6 +428,7 @@ def _getOptimalPatch(self, target_pixel) :
 ```
   
 </details>
+<br>
 
 ### _updateConfidence(self, Cp, target_pixel) :
     
@@ -433,6 +447,7 @@ def _updateConfidence(self, Cp, target_pixel) :
 ```
   
 </details>
+<br>
 
 ### _fillPatch(self, target_pixel, opt_patch) :
 
@@ -459,6 +474,7 @@ def _fillPatch(self, target_pixel, opt_patch) :
 ```
   
 </details>
+<br>
 
 ### _updateBorderPixel(self, i, j) :
 
@@ -479,6 +495,7 @@ def _updateBorderPixel(self, i, j) :
 ```
   
 </details>
+<br>
 
 ### _updateBorder(self, target_pixel) :
     
@@ -522,6 +539,7 @@ def _updateBorder(self, target_pixel) :
 ```
   
 </details>
+<br>
         
 
 ### __init__(self, patch_size, local_radius, data_significance = 0, alpha = 1, threshold = None) :
@@ -557,6 +575,7 @@ def __init__(self, patch_size, local_radius, data_significance = 0, alpha = 1, t
 ```
   
 </details>
+<br>
 
 ## inpainting methods
 
@@ -589,6 +608,7 @@ def _inpaintingIteration(self) :
 ```
   
 </details>
+<br>
     
 ### inpaint(self, image, mask) :
 
@@ -624,6 +644,7 @@ def inpaint(self, image, mask) :
 ```
   
 </details>
+<br>
 
 ### inpaintWithSteps(self, image, mask) :
 
@@ -659,3 +680,4 @@ def inpaintWithSteps(self, image, mask) :
 ```
   
 </details>
+<br>
