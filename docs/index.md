@@ -28,7 +28,9 @@ center : center of the patch to extract
 <details>
 <summary>Click to see code</summary>
   
-```
+
+{% highlight python %}
+
 def _getPatch(self, array, center) :
     i, j = center
         
@@ -45,7 +47,8 @@ def _getPatch(self, array, center) :
         print("One of the indices is out of range")
 
     # Methods for getting border pixels
-```
+ 
+{% endhighlight %}
   
 </details>
 <br>
@@ -61,7 +64,8 @@ Parameters :
 <details>
 <summary>Click to see code</summary>
   
-```
+
+{% highlight python %}
 def _isBorderPixel(self, n, m) :
 
     if self.mask[n][m] == 0 :
@@ -78,7 +82,7 @@ def _isBorderPixel(self, n, m) :
                 continue
 
     return False
-```
+{% endhighlight %}
   
 </details>
 <br>
@@ -91,8 +95,8 @@ over the border
 
 <details>
 <summary>Click to see code</summary>
-  
-```
+ 
+{% highlight python %}
 def _getBorderPx(self) :
     self.border_pxls = set()
 
@@ -105,7 +109,7 @@ def _getBorderPx(self) :
         for j in range(lower_j, upper_j + 1) :
             if self._isBorderPixel(i, j) :
                 self.border_pxls.add((i, j))
-```
+{% endhighlight %}
   
 </details>
 <br>
@@ -121,10 +125,10 @@ Parameters :
 <details>
 <summary>Click to see code</summary>
   
-```
+{% highlight python %}
 def _patchConfidence(self, center) :
     return np.sum(self._getPatch(self.confidence, center)) / self.patch_size**2
-```
+{% endhighlight %}
   
 </details>   
 <br>    
@@ -136,8 +140,8 @@ at each iteration
 
 <details>
 <summary>Click to see code</summary>
-  
-```
+
+{% highlight python %}
 def _calcNormalMatrix(self):
     x_kernel = np.array([[.25, 0, -.25], [.5, 0, -.5], [.25, 0, -.25]])
     y_kernel = np.array([[.25, .5, .25], [0, 0, 0], [-.25, -.5, -.25]])
@@ -152,8 +156,7 @@ def _calcNormalMatrix(self):
 
     unit_normal = -normal / np.expand_dims(norm, axis=2)
     self.normal_mask = unit_normal
-
-```
+{% endhighlight %}
   
 </details>
 <br>
@@ -166,11 +169,11 @@ Parameters :
 <details>
 <summary>Click to see code</summary>
   
-```
+{% highlight python %}
 def _getNormalPatch(self, center):
     i, j = center
     return self.normal_mask[i, j]
-```
+{% endhighlight %}
   
 </details>
 <br>
@@ -183,14 +186,14 @@ Utility method to calculate the gradient vector to each pixel in the mask
 <details>
 <summary>Click to see code</summary>
   
-```     
+{% highlight python %}  
 def _calcGradientMask(self):        
     grey_image = rgb2gray(self.image)
     grey_image[self.mask == 0] = None
 
     self.gradient = np.nan_to_num(np.array(np.gradient(grey_image)))
     self.gradient_val = np.sqrt(self.gradient[0]**2 + self.gradient[1]**2)
-```
+{% endhighlight %}
   
 </details>
 <br>
@@ -204,8 +207,8 @@ Parameters :
     
 <details>
 <summary>Click to see code</summary>
-  
-```
+ 
+{% highlight python %}
 def _getGradientPatch(self, center) :
     max_gradient = np.zeros([2])
 
@@ -222,7 +225,7 @@ def _getGradientPatch(self, center) :
     max_gradient[1] = patch_x_gradient[patch_max_pos]
 
     return max_gradient
-```
+{% endhighlight %}
   
 </details>
 <br>
@@ -236,11 +239,11 @@ instead of doing the computation for each pixel
 <details>
 <summary>Click to see code</summary>
   
-```
+{% highlight python %}
 def _prepareDataUtils(self) :
     self._calcNormalMatrix()
     self._calcGradientMask()
-```
+{% endhighlight %}
   
 </details>
 <br>
@@ -255,7 +258,7 @@ Parameters :
 <details>
 <summary>Click to see code</summary>
   
-```
+{% highlight python %}
 def _patchData(self, center) :
     normal_vector = self._getNormalPatch(center)
     max_gradient = self._getGradientPatch(center)
@@ -263,8 +266,8 @@ def _patchData(self, center) :
     data = np.abs(np.dot(normal_vector, max_gradient.T)) / self.alpha
 
     return data
-```
-  
+{% endhighlight %}
+
 </details>
 <br>
 
@@ -278,13 +281,13 @@ respective patch
 <details>
 <summary>Click to see code</summary>
   
-```
+{% highlight python %}
 def _getMaxPriority(self) :
     Pp, Cp = 0, 0
     max_pixel = (0, 0)
     # print("border", len(self.border_pxls))
     self._prepareDataUtils()
-
+    
     # loop over the border pixels to get the maximum priority one
     for pixel in self.border_pxls :
 
@@ -306,7 +309,7 @@ def _getMaxPriority(self) :
             max_pixel = pixel
 
     return max_pixel, Cp
-```
+{% endhighlight %}
   
 </details>
 <br>
@@ -325,12 +328,12 @@ Parameters :
 <details>
 <summary>Click to see code</summary>
   
-```
+{% highlight python %}
 def _distance(self, target_patch, candidate_patch, mask_patch) :
     mask_patch = np.expand_dims(mask_patch, axis=2)
 
     return np.sum(((target_patch - candidate_patch) * mask_patch) ** 2) / np.sum(mask_patch)
-```
+{% endhighlight %}
   
 </details>
 <br>
@@ -347,7 +350,7 @@ Utility method to get the limits for the optimal patch search, according
 <details>
 <summary>Click to see code</summary>
   
-```     
+{% highlight python %}  
 def _getSearchBoundaries(self, target_pixel) :
     n, m = target_pixel
 
@@ -363,7 +366,7 @@ def _getSearchBoundaries(self, target_pixel) :
         lower_j = self.offset
 
     return upper_i, lower_i, upper_j, lower_j
-```
+{% endhighlight %}
   
 </details>
 <br>
@@ -381,7 +384,7 @@ Parameters :
 <details>
 <summary>Click to see code</summary>
   
-```
+{% highlight python %}
 def _getOptimalPatch(self, target_pixel) :
     n, m = target_pixel
 
@@ -425,7 +428,7 @@ def _getOptimalPatch(self, target_pixel) :
             optimal_distance = current_distance
 
     return optimal_patch
-```
+{% endhighlight %}
   
 </details>
 <br>
@@ -438,13 +441,13 @@ according to the formula in the paper
 <details>
 <summary>Click to see code</summary>
   
-```
+{% highlight python %}
 def _updateConfidence(self, Cp, target_pixel) :
     i, j = target_pixel
 
     self.confidence[i - self.offset : i + self.offset + 1, j - self.offset : j + self.offset + 1] = \
         self._getPatch(self.confidence, target_pixel) + (1 - self._getPatch(self.mask, target_pixel)) * Cp
-```
+{% endhighlight %}
   
 </details>
 <br>
@@ -457,7 +460,7 @@ in the previous steps in the masked region
 <details>
 <summary>Click to see code</summary>
   
-```
+{% highlight python %}
 def _fillPatch(self, target_pixel, opt_patch) :
     n, m = target_pixel
     i, j = opt_patch
@@ -471,7 +474,7 @@ def _fillPatch(self, target_pixel, opt_patch) :
     self.image[un: dn, lm: rm, :] = self.image[un: dn, lm: rm, :] * mask_patch + self.image[ui: di, lj: rj, :] * (1 - mask_patch)
 
     self.mask[un: dn, lm: rm] = 1
-```
+{% endhighlight %}
   
 </details>
 <br>
@@ -485,14 +488,14 @@ Parameters :
 <details>
 <summary>Click to see code</summary>
   
-```
+{% highlight python %}
 def _updateBorderPixel(self, i, j) :
     if self._isBorderPixel(i, j) :
         self.border_pxls.add((i, j))
 
     else :
         self.border_pxls.discard((i, j))
-```
+{% endhighlight %}
   
 </details>
 <br>
@@ -508,7 +511,7 @@ Parameters :
 <details>
 <summary>Click to see code</summary>
   
-```
+{% highlight python %}
 def _updateBorder(self, target_pixel) :
     n, m = target_pixel
 
@@ -536,7 +539,7 @@ def _updateBorder(self, target_pixel) :
     for j in range(upper_j - 1, min(upper_j + 1, self.mask.shape[1] - self.offset)) :
         for i in range(max(lower_i - 1, self.offset), min(upper_i + 1, self.mask.shape[0] - self.offset)) :
             self._updateBorderPixel(i, j)
-```
+{% endhighlight %}
   
 </details>
 <br>
@@ -558,8 +561,8 @@ Parameters :
                     
 <details>
 <summary>Click to see code</summary>
-  
-```
+ 
+{% highlight python %}
 def __init__(self, patch_size, local_radius, data_significance = 0, alpha = 1, threshold = None) :
     # assert patch_size is an odd number
     if patch_size%2 == 0 :
@@ -572,7 +575,7 @@ def __init__(self, patch_size, local_radius, data_significance = 0, alpha = 1, t
     self.alpha = alpha
     self.threshold = threshold
     self.start_zeros = None
-```
+{% endhighlight %}
   
 </details>
 <br>
@@ -588,7 +591,7 @@ to execute the inpainting algorithm
 <details>
 <summary>Click to see code</summary>
   
-```
+{% highlight python %}
 def _inpaintingIteration(self) :
 
     progress = 100
@@ -605,7 +608,7 @@ def _inpaintingIteration(self) :
     self.progress = (1 - np.sum((1 - self.mask)) / self.start_zeros) * 100
 
     self._updateBorder(target_pixel)
-```
+{% endhighlight %}
   
 </details>
 <br>
@@ -622,7 +625,7 @@ and the rest of the image by 1's
 <details>
 <summary>Click to see code</summary>
   
-```
+{% highlight python %}
 def inpaint(self, image, mask) :
     self.image = image
     self.mask = mask
@@ -641,7 +644,7 @@ def inpaint(self, image, mask) :
         print("Almost there ! ===> {:.1f}/{}".format(self.progress, 100), sep='\n')
 
     return self.image
-```
+{% endhighlight %}
   
 </details>
 <br>
@@ -657,7 +660,7 @@ and the rest of the image by 1's
 <details>
 <summary>Click to see code</summary>
   
-```
+{% highlight python %}
 def inpaintWithSteps(self, image, mask) :
     self.image = image
     self.mask = mask
@@ -677,7 +680,7 @@ def inpaintWithSteps(self, image, mask) :
         print("Almost there ! ===> {:.1f}/{}".format(self.progress, 100), sep='\n')
 
         yield self.image, self.mask, self.progress
-```
+{% endhighlight %}
   
 </details>
 <br>
