@@ -22,7 +22,7 @@ navbar_layout = dbc.NavbarSimple(
                         ),
                         dbc.NavItem(
                             dbc.NavLink(
-                                [html.I(className="fa fa-file"), "View Documentation"], 
+                                [html.I(className="fa fa-file"), "View Docs"], 
                                 href="https://taherromdhane.github.io/inpainting-images/",
                                 target="_blank"
                                 )

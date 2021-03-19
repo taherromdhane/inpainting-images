@@ -22,6 +22,6 @@ EXPOSE 8000
 ENV FLASK_APP=server
 ENV FLASK_ENV=development
 
-# Run run.py when the container launches
+# Fire server when the container launches
 # CMD ["gunicorn", "--bind", "0.0.0.0:8000", "app:server", "--timeout", "600"]
 CMD ["gunicorn", "app:server", "--timeout", "600"]
