@@ -2,6 +2,7 @@
 The Inpainter object that handles the inpainting
     
 ### _normalize(self)
+
 Utility method to normalize the image before running
 the inpainting algorithm
 
@@ -9,6 +10,7 @@ the inpainting algorithm
 <summary>Click to see code</summary>
     
 {% highlight python %}
+
 def _normalize(self) :
     self.image = self.image/np.max(self.image)
 {% endhighlight %}
@@ -21,9 +23,12 @@ def _normalize(self) :
 Utility method to get patch of image or mask or any other numpy array
 Note the array must is supposed to be a mask or an image so it should
 be 2D or 3D (RGB/RGBA) format
-Parameters :
-array : array to get the patch from
-center : center of the patch to extract
+
+**Parameters :**
+
+    array : array to get the patch from
+
+    center : center of the patch to extract
 
 <details>
 <summary>Click to see code</summary>
@@ -57,8 +62,11 @@ def _getPatch(self, array, center) :
 
 Utility method that takes a pixel position (n, m) and a mask as input and returns
 whether the pixel in that position is a border pixel or not
-Parameters :
-    n: coordinate of pixel on the first axis 
+
+**Parameters :**
+
+    n: coordinate of pixel on the first axis
+    
     m: coordinate of pixel on the second axis 
 
 <details>
@@ -119,7 +127,9 @@ def _getBorderPx(self) :
 ### _patchConfidence(self, center) :
 
 Utility method to calculate the confidence of a chosen patch
-Parameters :
+
+**Parameters :**
+
     center: tuple of the coordinated of the center of patch 
     
 <details>
@@ -163,7 +173,9 @@ def _calcNormalMatrix(self):
 
 ### _getNormalPatch(self, center):
 Utility method to calculate the normal vector to a chosen patch
-Parameters :
+
+**Parameters :**
+
     center: tuple of the coordinates of the center of patch
 
 <details>
@@ -202,7 +214,9 @@ def _calcGradientMask(self):
 
 Utility method to get the maximum norm of a gradient vector 
 to the pixels of a chosen patch
-Parameters :
+
+**Parameters :**
+
     center: tuple of the coordinates of the center of patch
     
 <details>
@@ -252,7 +266,9 @@ def _prepareDataUtils(self) :
 
 Method that calculates the data term for a given patch, according to the 
 formula in the paper
-Parameters :
+
+**Parameters :**
+
     center: tuple of the coordinates of the center of patch
                 
 <details>
@@ -320,9 +336,13 @@ def _getMaxPriority(self) :
 
 Utility method that calculates the distance between the candidate patch and 
 the target patch
-Parameters :
+
+**Parameters :**
+
     target_patch: tuple of coordinates of target patch 
+    
     candidate_patch: tuple of coordinates of candidate patch 
+    
     mask_patch: tuple of coordinates of mask patch 
                 
 <details>
@@ -342,10 +362,12 @@ def _distance(self, target_patch, candidate_patch, mask_patch) :
 ### _getSearchBoundaries(self, target_pixel) :
 
 Utility method to get the limits for the optimal patch search, according
-        to the local_radius parameter 
-        Parameters :
-            target_pixel: tuple of the coordinates of the target pixel, center of the patch
-            to fill
+to the local_radius parameter 
+
+**Parameters :**
+
+    target_pixel: tuple of the coordinates of the target pixel, center of the patch
+    to fill
             
 <details>
 <summary>Click to see code</summary>
@@ -377,7 +399,9 @@ Utility method for getting the optimal patch from the potential patches,
 these are the ones that are fully included in the image (no pixel in masked
 region), and are within a radius of the target pixel (specified by the parameter
 local_radius in the __init__ method).
-Parameters :
+
+**Parameters :**
+
     target_pixel: tuple of the coordinates of the target pixel, center of the patch
     to fill
                 
@@ -482,7 +506,9 @@ def _fillPatch(self, target_pixel, opt_patch) :
 ### _updateBorderPixel(self, i, j) :
 
 Utility method for the main logic of updating pixels on the edge of the filled patch
-Parameters :
+
+**Parameters :**
+
     i, j: coordinates of the pixel
                 
 <details>
@@ -505,7 +531,9 @@ def _updateBorderPixel(self, i, j) :
 Utility method for an updating the set of border pixels after an iteration,
 removing the pixels that are no longer on the border (inside the filled patch),
 and adding the new ones in the set
-Parameters :
+
+**Parameters :**
+
     target_pixel: the center of the target patch filled by the algorithm 
                 
 <details>
@@ -548,13 +576,19 @@ def _updateBorder(self, target_pixel) :
 ### __init__(self, patch_size, local_radius, data_significance = 0, alpha = 1, threshold = None) :
     
 Initiantes the inpainter object with parameters for the inpainting
-Parameters :
+
+**Parameters :**
+
     patch_size: the patch size the algorithm uses to fill the mask at each iteration
+    
     local_radius: specify a radius to limit the search for the optimal to a 
         neighboring region 
+        
     data_significance: the significance accorded to the data term, 0 meaning 
         totally ignored and 1 meaning full significance
+        
     alpha: the alpha term in the formula of the data term
+    
     threshold: the center similarity threshold to use in order to reduce the complexity
         by leaving out patches with central pixels that are too different (difference bigger
         than the threshold) 
@@ -616,7 +650,9 @@ def _inpaintingIteration(self) :
 ### inpaint(self, image, mask) :
 
 Main method to handle the inpainting
-Parameters:
+
+**Parameters :**
+
     - image: the image to inpaint
     - mask: the mask of the image to inpaint, denoting the masked area by 0's
 and the rest of the image by 1's
@@ -652,8 +688,10 @@ def inpaint(self, image, mask) :
 ### inpaintWithSteps(self, image, mask) :
 
 Main method to handle the inpainting but returning the steps at each iteration
-Parameters:
+**Parameters :**
+
     - image: the image to inpaint
+
     - mask: the mask of the image to inpaint, denoting the masked area by 0's
 and the rest of the image by 1's
     
