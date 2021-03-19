@@ -130,7 +130,7 @@ Utility method to calculate the confidence of a chosen patch
 
 **Parameters :**
 
-    center: tuple of the coordinated of the center of patch 
+- center: tuple of the coordinated of the center of patch 
     
 <details>
 <summary>Click to see code</summary>
@@ -654,6 +654,7 @@ Main method to handle the inpainting
 **Parameters :**
 
 - image: the image to inpaint
+
 - mask: the mask of the image to inpaint, denoting the masked area by 0's
 and the rest of the image by 1's
 
