@@ -26,9 +26,9 @@ be 2D or 3D (RGB/RGBA) format
 
 **Parameters :**
 
-    array : array to get the patch from
+- array : array to get the patch from
 
-    center : center of the patch to extract
+- center : center of the patch to extract
 
 <details>
 <summary>Click to see code</summary>
@@ -65,9 +65,9 @@ whether the pixel in that position is a border pixel or not
 
 **Parameters :**
 
-    n: coordinate of pixel on the first axis
-    
-    m: coordinate of pixel on the second axis 
+- n: coordinate of pixel on the first axis
+
+- m: coordinate of pixel on the second axis 
 
 <details>
 <summary>Click to see code</summary>
@@ -176,7 +176,7 @@ Utility method to calculate the normal vector to a chosen patch
 
 **Parameters :**
 
-    center: tuple of the coordinates of the center of patch
+- center: tuple of the coordinates of the center of patch
 
 <details>
 <summary>Click to see code</summary>
@@ -217,7 +217,7 @@ to the pixels of a chosen patch
 
 **Parameters :**
 
-    center: tuple of the coordinates of the center of patch
+- center: tuple of the coordinates of the center of patch
     
 <details>
 <summary>Click to see code</summary>
@@ -269,7 +269,7 @@ formula in the paper
 
 **Parameters :**
 
-    center: tuple of the coordinates of the center of patch
+- center: tuple of the coordinates of the center of patch
                 
 <details>
 <summary>Click to see code</summary>
@@ -339,11 +339,11 @@ the target patch
 
 **Parameters :**
 
-    target_patch: tuple of coordinates of target patch 
-    
-    candidate_patch: tuple of coordinates of candidate patch 
-    
-    mask_patch: tuple of coordinates of mask patch 
+- target_patch: tuple of coordinates of target patch 
+
+- candidate_patch: tuple of coordinates of candidate patch 
+
+- mask_patch: tuple of coordinates of mask patch 
                 
 <details>
 <summary>Click to see code</summary>
@@ -366,8 +366,8 @@ to the local_radius parameter
 
 **Parameters :**
 
-    target_pixel: tuple of the coordinates of the target pixel, center of the patch
-    to fill
+- target_pixel: tuple of the coordinates of the target pixel, center of the patch
+to fill
             
 <details>
 <summary>Click to see code</summary>
@@ -402,8 +402,8 @@ local_radius in the __init__ method).
 
 **Parameters :**
 
-    target_pixel: tuple of the coordinates of the target pixel, center of the patch
-    to fill
+- target_pixel: tuple of the coordinates of the target pixel, center of the patch
+to fill
                 
 <details>
 <summary>Click to see code</summary>
@@ -509,7 +509,7 @@ Utility method for the main logic of updating pixels on the edge of the filled p
 
 **Parameters :**
 
-    i, j: coordinates of the pixel
+- i, j: coordinates of the pixel
                 
 <details>
 <summary>Click to see code</summary>
@@ -534,7 +534,7 @@ and adding the new ones in the set
 
 **Parameters :**
 
-    target_pixel: the center of the target patch filled by the algorithm 
+- target_pixel: the center of the target patch filled by the algorithm 
                 
 <details>
 <summary>Click to see code</summary>
@@ -579,19 +579,19 @@ Initiantes the inpainter object with parameters for the inpainting
 
 **Parameters :**
 
-    patch_size: the patch size the algorithm uses to fill the mask at each iteration
-    
-    local_radius: specify a radius to limit the search for the optimal to a 
-        neighboring region 
-        
-    data_significance: the significance accorded to the data term, 0 meaning 
-        totally ignored and 1 meaning full significance
-        
-    alpha: the alpha term in the formula of the data term
-    
-    threshold: the center similarity threshold to use in order to reduce the complexity
-        by leaving out patches with central pixels that are too different (difference bigger
-        than the threshold) 
+- patch_size: the patch size the algorithm uses to fill the mask at each iteration
+
+- local_radius: specify a radius to limit the search for the optimal to a 
+neighboring region 
+
+- data_significance: the significance accorded to the data term, 0 meaning 
+totally ignored and 1 meaning full significance
+
+- alpha: the alpha term in the formula of the data term
+
+- threshold: the center similarity threshold to use in order to reduce the complexity
+by leaving out patches with central pixels that are too different (difference bigger
+than the threshold) 
                     
 <details>
 <summary>Click to see code</summary>
@@ -653,8 +653,8 @@ Main method to handle the inpainting
 
 **Parameters :**
 
-    - image: the image to inpaint
-    - mask: the mask of the image to inpaint, denoting the masked area by 0's
+- image: the image to inpaint
+- mask: the mask of the image to inpaint, denoting the masked area by 0's
 and the rest of the image by 1's
 
         
@@ -690,9 +690,9 @@ def inpaint(self, image, mask) :
 Main method to handle the inpainting but returning the steps at each iteration
 **Parameters :**
 
-    - image: the image to inpaint
+- image: the image to inpaint
 
-    - mask: the mask of the image to inpaint, denoting the masked area by 0's
+- mask: the mask of the image to inpaint, denoting the masked area by 0's
 and the rest of the image by 1's
     
 <details>
