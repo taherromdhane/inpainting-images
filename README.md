@@ -12,10 +12,11 @@ You can also find the paper [here](https://www.irisa.fr/vista/Papers/2004_ip_cri
 After initialization, the inpainter looks for the border pixels (pixels that are part of the image and there is a masked pixel in their immediate neighborhood).
 It then iterates until there are no border pixels left (masked region is fully filled).
 In each iteration, it does :
-    - It finds the border pixel with the most priority (according to the formula in the paper).
-    - Then, it tries to fill the patch which center is this pixel. 
-    - For this, it performs a search for the best patch to use in the filling among patches that are fully in the image.
-    - After filling, it updates the mask, the confidence values, and the border pixels.
+
+- It finds the border pixel with the most priority (according to the formula in the paper).
+- Then, it tries to fill the patch which center is this pixel. 
+- For this, it performs a search for the best patch to use in the filling among patches that are fully in the image.
+- After filling, it updates the mask, the confidence values, and the border pixels.
     
 This is showcased in this code :
 ```python
