@@ -84,6 +84,8 @@ After building image, you just need to run a container with it. Run this command
 docker run -p 8000:8000 inpainter:1.0
 ```
 
+You should then be able access it at https://localhost:8000
+
 ## Deploying
 
 This project is ready to be deployed with docker, you just need to comment this line
